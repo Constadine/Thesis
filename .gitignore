@@ -1,4 +1,8 @@
-
+*venv/
 *.txt
 *.ipynb
 *.xml
+*.csv
+*.pyc
+*.atom
+*.html

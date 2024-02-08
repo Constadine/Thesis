@@ -7,19 +7,30 @@ ds = pd.read_csv('data/bird_data/occurrence.txt', sep="\t", on_bad_lines='skip')
 # Clean dataset
 ds.dropna(axis=1, how='all', inplace=True)
 
-col_to_drop1 = ['recordedBy', 'organismQuantity', 'taxonomicStatus']
+col_to_drop1 = ['gbifID', 'occurrenceID', 'recordedBy', 
+                'organismQuantity', 'taxonomicStatus', 'eventTime',
+                'eventID', 'startDayOfYear', 'endDayOfYear',
+                'sampleSizeValue', 'locationID', 'county',
+                'taxonID', 'scientificName', 'order', 'family', 'genus', 'genericName',
+                'specificEpithet', 'infraspecificEpithet', 'taxonRank',
+                'vernacularName', 'lastInterpreted', 'taxonKey', 'acceptedTaxonKey',
+                'orderKey', 'familyKey', 'genusKey', 'speciesKey', 'species',
+                'acceptedScientificName', 'verbatimScientificName', 'lastParsed',
+                'level0Gid', 'level0Name', 'level1Gid', 'level1Name', 'level2Gid',
+                'level2Name', 'iucnRedListCategory']
 col_to_drop2 = [x for x in ds.columns if len(ds[x].unique()) == 1]
 ds.rename(columns={'decimalLatitude': 'lat', 'decimalLongitude': 'lon'}, inplace=True)
 
 
 ds = ds.drop(columns=col_to_drop1 + col_to_drop2)
 
-
 nestlings = ds[ds.lifeStage == 'Nestling']
 
-overten = nestlings.individualCount[nestlings.individualCount >= 10]
-belowten = nestlings.individualCount[nestlings.individualCount < 10]
+nestlings.to_csv('data//bird_data/nestlings_cleaned.csv')
 
+# overten = nestlings.individualCount[nestlings.individualCount >= 10]
+# belowten = nestlings.individualCount[nestlings.individualCount < 10]
+    
 # Vizualize
 # import plotly.express as px
 # import plotly.io as pio
@@ -54,24 +65,24 @@ belowten = nestlings.individualCount[nestlings.individualCount < 10]
 
 # fig.show()
 
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+# import matplotlib.pyplot as plt
+# import cartopy.crs as ccrs
+# import cartopy.feature as cfeature
 
-# Set up the plot
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+# # Set up the plot
+# fig = plt.figure(figsize=(10, 8))
+# ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 
-# Add map features
-ax.add_feature(cfeature.LAND)
-ax.add_feature(cfeature.OCEAN)
-ax.add_feature(cfeature.COASTLINE)
-ax.add_feature(cfeature.BORDERS, linestyle=':')
+# # Add map features
+# ax.add_feature(cfeature.LAND)
+# ax.add_feature(cfeature.OCEAN)
+# ax.add_feature(cfeature.COASTLINE)
+# ax.add_feature(cfeature.BORDERS, linestyle=':')
 
-# Set the map extent to Europe
-ax.set_extent([8, 16, 54, 61], crs=ccrs.PlateCarree())
+# # Set the map extent to Europe
+# ax.set_extent([8, 16, 54, 61], crs=ccrs.PlateCarree())
 
-# Plot the temperature data
-im = ax.pcolormesh(ds.lon, ds.lat, ds.individualCount, cmap='RdYlGn', transform=ccrs.PlateCarree())
+# # Plot the temperature data
+# im = ax.pcolormesh(ds.lon, ds.lat, ds.individualCount, cmap='RdYlGn', transform=ccrs.PlateCarree())
 
-fig.show()
+# fig.show()
