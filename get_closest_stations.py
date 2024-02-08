@@ -33,15 +33,15 @@ closest_file = None
 min_distance = float('inf')  # Initialize with positive infinity
 pairs = dict()
 pair_number = 1
-
 # Iterate through each file in the folder
 for coords in all_bird_stations:
     min_distance = None
     target_latitude, target_longitude = coords[0], coords[1]
-    for filename in os.listdir(folder_path):
+    
+    for filename in os.listdir(folder_path):  ###### MISTAKE IS HERE. TAKES SAME FILE FOR DIFFERENT COORDS
         if filename.endswith(".csv"):
             file_path = os.path.join(folder_path, filename)
-            print(file_path)
+            # print(file_path)
             with open(file_path, 'r') as file:
                 for i, line in enumerate(file):
                     if i == 8:  # Print line 5 (0-indexed)
@@ -72,15 +72,19 @@ for coords in all_bird_stations:
                 min_distance = distance
 
     key_name = f"Pair_{pair_number}"
-    pairs[key_name] = {'bird_coords': (target_latitude,target_longitude), 'obs_coords': obs_coords, 'obs_file': filename}
+    """
+    Check if obs station exists. If they exist just append the bird coords there so many bird locations
+    are linked with one obs station
+    """
+    pairs[key_name] = {'bird_coords': (target_latitude,target_longitude), 'obs_coords': obs_coords, 'obs_file': closest_file}
     
     pair_number += 1
     # Print the closest file name and distance
-    if closest_file is not None:
-        print(f"Bird coords: {target_latitude},{target_longitude}. File coords: {obs_coords}")
-        print(f"The closest file is: {closest_file} with a distance of {min_distance} km.")
-    else:
-        print("No file found.")
+    # if closest_file is not None:
+    #     print(f"Bird coords: {target_latitude},{target_longitude}. File coords: {obs_coords}")
+    #     print(f"The closest file is: {closest_file} with a distance of {min_distance} km.")
+    # else:
+    #     print("No file found.")
     
 # waves = pd.read_csv(f"data/SMHI/wave-height/{closest_file}", sep='[;,]', skiprows=8)
 
@@ -96,6 +100,9 @@ average_lon = sum(value[1] for pair_values in pairs.values() for key, value in p
 # max_lat = max()
 mymap = folium.Map(location=[average_lat, average_lon], zoom_start=2)
 for pair_key, pair_values in pairs.items():
+    """
+    Fix pairing stations
+    """
     bird_coords = pair_values.get('bird_coords', (None, None))
     obs_coords = pair_values.get('obs_coords', (None, None))
 
