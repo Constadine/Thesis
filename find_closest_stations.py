@@ -3,6 +3,7 @@ from handle_data import load_and_clean_nestling_data
 import pandas as pd
 from math import radians, sin, cos, sqrt, atan2
 import geopy.distance
+from collections import defaultdict
 
 def haversine(lat1, lon1, lat2, lon2):
     # Convert latitude and longitude from degrees to radians
@@ -33,13 +34,20 @@ def match_bird_and_observation_data(bird_data, folder_path):
 
     """
     all_bird_stations = list(zip(list(bird_data['lat'].unique()), list(bird_data['lon'].unique())))
-    discarded_distances = dict()
+
     # Folder containing CSV files
     
     # Initialize variables to store the closest file name and distance
     closest_file = None
     min_distance = float('inf')  # Initialize with positive infinity
     pairs = dict()
+    
+    #### TESTING ####
+
+    # discarded_distances = dict()
+    
+    #### TESTING ####
+
     pair_number = 1
     # Iterate through each file in the folder
     for coords in all_bird_stations:
@@ -73,11 +81,17 @@ def match_bird_and_observation_data(bird_data, folder_path):
                 # Check if the current file is closer than the previous closest file
                 if min_distance:
                     if distance < min_distance:
-                        key_name_test = f"Old_distance{pair_number}"
-                        if key_name_test in discarded_distances:
-                            discarded_distances[key_name_test].append(distance)
-                        else:
-                            discarded_distances[key_name_test] = [distance]
+                        
+                        #### TESTING ####
+                        
+                        # key_name_test = f"Old_distance{pair_number}"
+                        # if key_name_test in discarded_distances:
+                        #     discarded_distances[key_name_test].append(distance.km)
+                        # else:
+                        #     discarded_distances[key_name_test] = [distance.km]
+                        
+                        #### TESTING ####
+                        bird_coords = (target_latitude, target_longitude)
                         obs_coords = (latitude, longitude)
                         min_distance = distance
                         closest_file = filename
@@ -89,56 +103,107 @@ def match_bird_and_observation_data(bird_data, folder_path):
         Check if obs station exists. If they exist just append the bird coords there so many bird locations
         are linked with one obs station
         """
-        pairs[key_name] = {'bird_coords': (target_latitude,target_longitude), 'obs_coords': obs_coords, 'obs_file': closest_file}
-        
-        pair_number += 1
-        # Print the closest file name and distance
-        if closest_file is not None:
-            print(f"Bird coords: {target_latitude},{target_longitude}. File coords: {obs_coords}")
-            print(f"The closest file is: {closest_file} with a distance of {min_distance} km.")
+        print(f"The coords I'm searcing are: {obs_coords}")
+        for key, value in pairs.items():
+            print(f" and key {key} has these coords: {value['obs_coords']}")
+            if obs_coords == value['obs_coords']:
+
+                print(f"FOUND! I'm at {pair_number} I'll add {bird_coords} to this key {key}")
+                pairs[key]['bird_coords'].append(bird_coords)
+                print(f"and now I have these birds coords: {pairs[key]['bird_coords']}")
+                print('----')
+                break
         else:
-            print("No file found.")
+            print(f"So I didnt replace anything but I created a new pair named with key name {key_name}")
+            print("----")
+            pairs[key_name] = {'bird_coords': [bird_coords], 'obs_coords': obs_coords, 'obs_file': closest_file}
+            pair_number += 1
+
         
-    # waves = pd.read_csv(f"data/SMHI/wave-height/{closest_file}", sep='[;,]', skiprows=8)
-    
-    return pairs, discarded_distances
+        # Print the closest file name and distance
+        # if closest_file is not None:
+        #     print(f"Bird coords: {target_latitude},{target_longitude}. File coords: {obs_coords}")
+        #     print(f"The closest file is: {closest_file} with a distance of {min_distance} km.")
+        # else:
+        #     print("No file found.")
+     # Create a dictionary to store grouped results
+
+    return pairs
     
 def create_paired_stations_map(pairs):
-    import folium
     
     """
     FIX THE ZOOM
     """
     # Create a folium map centered at a specific location (e.g., average of all coordinates)
-    average_lat = sum(value[0] for pair_values in pairs.values() for key, value in pair_values.items() if 'coords' in key) / (len(pairs) * 2)
-    average_lon = sum(value[1] for pair_values in pairs.values() for key, value in pair_values.items() if 'coords' in key) / (len(pairs) * 2)
+    # average_lat = sum(value[0] for pair_values in pairs.values() for key, value in pair_values.items() if 'coords' in key) / (len(pairs) * 2)
+    # average_lon = sum(value[1] for pair_values in pairs.values() for key, value in pair_values.items() if 'coords' in key) / (len(pairs) * 2)
     # max_lat = max()
-    mymap = folium.Map(location=[average_lat, average_lon], zoom_start=2)
-    for pair_key, pair_values in pairs.items():
-        """
-        Fix pairing stations
-        """
-        bird_coords = pair_values.get('bird_coords', (None, None))
-        obs_coords = pair_values.get('obs_coords', (None, None))
+    # mymap = folium.Map()
+    # for pair_key, pair_values in pairs.items():
+    #     """
+    #     Fix pairing stations
+    #     """
+    #     bird_coords = pair_values.get('bird_coords', (None, None))
+    #     obs_coords = pair_values.get('obs_coords', (None, None))
     
-        # Add markers for bird and observation coordinates
-        if bird_coords != (None, None):
-            folium.Marker(bird_coords, popup=f"{pair_key}: {bird_coords}", icon=folium.Icon(color='blue')).add_to(mymap)
-        if obs_coords != (None, None):
-            folium.Marker(obs_coords, popup=f"{pair_key}: {obs_coords}", icon=folium.Icon(color='red')).add_to(mymap)
+    #     # Add markers for bird and observation coordinates
+    #     if bird_coords != (None, None):
+    #         folium.Marker(bird_coords, popup=f"{pair_key}: {bird_coords}", icon=folium.Icon(color='blue')).add_to(mymap)
+    #     if obs_coords != (None, None):
+    #         folium.Marker(obs_coords, popup=f"{pair_key}: {obs_coords}", icon=folium.Icon(color='red')).add_to(mymap)
     
-        # Add line connecting bird and observation coordinates
-        if bird_coords != (None, None) and obs_coords != (None, None):
-            folium.PolyLine([bird_coords, obs_coords], color="purple").add_to(mymap)
+    #     # Add line connecting bird and observation coordinates
+    #     if bird_coords != (None, None) and obs_coords != (None, None):
+    #         folium.PolyLine([bird_coords, obs_coords], color="purple").add_to(mymap)
     
-    # Save the map as an HTML file or display it
-    mymap.save('map_with_colored_markers.html')
+    # # Save the map as an HTML file or display it
+    # mymap.save('map_with_colored_markers.html')
+    
+    
+     
+    import folium
+    from folium import PolyLine
+    
+    # Create a folium map centered around the average coordinates
+    average_coords = [
+        sum(coord[0] for pair in pairs.values() for coord in pair['bird_coords']) / len([coord for pair in pairs.values() for coord in pair['bird_coords']]),
+        sum(coord[1] for pair in pairs.values() for coord in pair['bird_coords']) / len([coord for pair in pairs.values() for coord in pair['bird_coords']])
+    ]
+    
+    mymap = folium.Map(location=average_coords, zoom_start=8)
+    
+    # Add markers and connecting lines for each pair
+    for pair_key, pair_value in pairs.items():
+        obs_coords = pair_value['obs_coords']
+        
+        # Add red marker for observation coordinates
+        folium.Marker(
+            location=obs_coords,
+            icon=folium.Icon(color='red'),
+            popup=f"Pair: {pair_key}<br>Obs Coords: {obs_coords}",
+        ).add_to(mymap)
+    
+        # Add blue markers for bird coordinates
+        for bird_coord in pair_value['bird_coords']:
+            folium.Marker(
+                location=bird_coord,
+                icon=folium.Icon(color='blue'),
+                popup=f"Pair: {pair_key}<br>Bird Coords: {bird_coord}",
+            ).add_to(mymap)
+    
+            # Add connecting lines between bird and observation coordinates
+            PolyLine(locations=[bird_coord, obs_coords], color="black").add_to(mymap)
+    
+    # Save the map to an HTML file
+    mymap.save("bird_map.html")
+    
 
 
 if __name__ == '__main__':
         
     filename = 'data/bird_data/nestlings_cleaned.csv'
-    nestlings = pd.read_csv(filename, nestlings=True)
+    nestlings = pd.read_csv(filename)
     
     folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/wave-height'
 

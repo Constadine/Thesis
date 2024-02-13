@@ -1,4 +1,5 @@
 from find_closest_stations import match_bird_and_observation_data
+from find_closest_stations import create_paired_stations_map
 import pandas as pd
 
 if __name__ == '__main__':
@@ -10,4 +11,6 @@ if __name__ == '__main__':
     
     folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/wave-height'
     
-    test_results, discarded_values = match_bird_and_observation_data(nestlings, folder_path)
+    pairs = match_bird_and_observation_data(nestlings, folder_path)
+
+    create_paired_stations_map(pairs)
