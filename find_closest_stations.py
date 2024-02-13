@@ -1,9 +1,9 @@
 import os
-from handle_data import load_and_clean_nestling_data
 import pandas as pd
-from math import radians, sin, cos, sqrt, atan2
 import geopy.distance
 from collections import defaultdict
+from math import radians, sin, cos, sqrt, atan2
+from handle_data import load_and_clean_nestling_data
 
 def haversine(lat1, lon1, lat2, lon2):
     # Convert latitude and longitude from degrees to radians
@@ -130,38 +130,7 @@ def match_bird_and_observation_data(bird_data, folder_path):
 
     return pairs
     
-def create_paired_stations_map(pairs):
-    
-    """
-    FIX THE ZOOM
-    """
-    # Create a folium map centered at a specific location (e.g., average of all coordinates)
-    # average_lat = sum(value[0] for pair_values in pairs.values() for key, value in pair_values.items() if 'coords' in key) / (len(pairs) * 2)
-    # average_lon = sum(value[1] for pair_values in pairs.values() for key, value in pair_values.items() if 'coords' in key) / (len(pairs) * 2)
-    # max_lat = max()
-    # mymap = folium.Map()
-    # for pair_key, pair_values in pairs.items():
-    #     """
-    #     Fix pairing stations
-    #     """
-    #     bird_coords = pair_values.get('bird_coords', (None, None))
-    #     obs_coords = pair_values.get('obs_coords', (None, None))
-    
-    #     # Add markers for bird and observation coordinates
-    #     if bird_coords != (None, None):
-    #         folium.Marker(bird_coords, popup=f"{pair_key}: {bird_coords}", icon=folium.Icon(color='blue')).add_to(mymap)
-    #     if obs_coords != (None, None):
-    #         folium.Marker(obs_coords, popup=f"{pair_key}: {obs_coords}", icon=folium.Icon(color='red')).add_to(mymap)
-    
-    #     # Add line connecting bird and observation coordinates
-    #     if bird_coords != (None, None) and obs_coords != (None, None):
-    #         folium.PolyLine([bird_coords, obs_coords], color="purple").add_to(mymap)
-    
-    # # Save the map as an HTML file or display it
-    # mymap.save('map_with_colored_markers.html')
-    
-    
-     
+def create_paired_stations_map(pairs):    
     import folium
     from folium import PolyLine
     
@@ -197,8 +166,6 @@ def create_paired_stations_map(pairs):
     
     # Save the map to an HTML file
     mymap.save("bird_map.html")
-    
-
 
 if __name__ == '__main__':
         
