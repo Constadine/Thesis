@@ -122,7 +122,11 @@ def match_bird_and_observation_data(bird_data, folder_path):
      # Create a dictionary to store grouped results
 
     return pairs
-    
+
+
+"""
+Fix map 
+"""
 def create_paired_stations_map(pairs):    
     import folium
     from folium import PolyLine
