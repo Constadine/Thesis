@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import geopy.distance
-from collections import defaultdict
 from math import radians, sin, cos, sqrt, atan2
 from handle_data import load_and_clean_nestling_data
 
@@ -18,7 +17,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
     return distance
 
-def match_bird_and_observation_data(bird_data, folder_path):
+def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     """
     Parameters
     ----------
@@ -82,26 +81,27 @@ def match_bird_and_observation_data(bird_data, folder_path):
                 else:
                     min_distance = distance
     
-        key_name = f"Pair_{pair_number}"
-        """
-        Check if obs station exists. If they exist just append the bird coords there so many bird locations
-        are linked with one obs station
-        """
-        print(f"The coords I'm searcing are: {obs_coords}")
-        for key, value in pairs.items():
-            print(f" and key {key} has these coords: {value['obs_coords']}")
-            if obs_coords == value['obs_coords']:
-
-                print(f"FOUND! I'm at {pair_number}. I'll add {bird_coords} to this key {key}")
-                pairs[key]['bird_coords'].append(bird_coords)
-                print(f"and now I have these birds coords: {pairs[key]['bird_coords']}")
-                print('----')
-                break
-        else:
-            print(f"So I didnt replace anything but I created a new pair named with key name {key_name}")
-            print("----")
-            pairs[key_name] = {'bird_coords': [bird_coords], 'obs_coords': obs_coords, 'obs_file': closest_file}
-            pair_number += 1
+        if min_distance.km < distance_limit:
+            key_name = f"Pair_{pair_number}"
+            """
+            Check if obs station exists. If they exist just append the bird coords there so many bird locations
+            are linked with one obs station
+            """
+            print(f"The coords I'm searcing are: {obs_coords}")
+            for key, value in pairs.items():
+                print(f" and key {key} has these coords: {value['obs_coords']}")
+                if obs_coords == value['obs_coords']:
+    
+                    print(f"FOUND! I'm at {pair_number}. I'll add {bird_coords} to this key {key}")
+                    pairs[key]['bird_coords'].append(bird_coords)
+                    print(f"and now I have these birds coords: {pairs[key]['bird_coords']}")
+                    print('----')
+                    break
+            else:
+                print(f"So I didnt replace anything but I created a new pair named with key name {key_name}")
+                print("----")
+                pairs[key_name] = {'bird_coords': [bird_coords], 'obs_coords': obs_coords, 'obs_file': closest_file}
+                pair_number += 1
 
         
         # Print the closest file name and distance
@@ -114,7 +114,22 @@ def match_bird_and_observation_data(bird_data, folder_path):
 
     return pairs
     
-def create_paired_stations_map(pairs):    
+def create_paired_stations_map(pairs, output_file_name):   
+    """
+    
+
+    Parameters
+    ----------
+    pairs : dict
+        DESCRIPTION.
+    output_file_name : str
+        Should be an .html file.
+
+    Returns
+    -------
+    .html file
+
+    """
     import folium
     from folium import PolyLine
     
@@ -149,11 +164,12 @@ def create_paired_stations_map(pairs):
             PolyLine(locations=[bird_coord, obs_coords], color="black").add_to(mymap)
     
     # Save the map to an HTML file
-    mymap.save("seawater_level_all_bird_map.html")
+    output_file_name = output_file_name
+    mymap.save(output_file_name)
 
 if __name__ == '__main__':
         
-    filename = 'data/bird_data/nestlings_cleaned.csv'
+    filename = 'data/all_bird_data/all_birds_cleaned.csv'
     nestlings = pd.read_csv(filename)
     
     folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/seawater-level'
@@ -161,5 +177,5 @@ if __name__ == '__main__':
     pairs = match_bird_and_observation_data(nestlings, folder_path)
     
     # Visualize
-    # create_paired_stations_map(pairs)
+    create_paired_stations_map(pairs, 'all_birds_paired_stations_map.html')
 

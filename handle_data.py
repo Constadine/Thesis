@@ -34,8 +34,8 @@ def load_and_clean_nestling_data(filename, nestlings=False):
 
 
 if __name__ == '__main__':
-    filename = 'data/bird_data/occurrence.txt'
-    ds = load_and_clean_nestling_data(filename, nestlings=False)
+    filename = 'data/all_bird_data/occurrence.txt'
+    ds = load_and_clean_nestling_data(filename, nestlings=True)
     
     ### Uncomment to save the csv
-    ds.to_csv('data//bird_data/all_birds_cleaned.csv')
+    ds.to_csv('data/all_bird_data/all_nestlings_cleaned.csv')
