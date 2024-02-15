@@ -39,7 +39,7 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     closest_file = None
     pairs = dict()
     pair_number = 1
-    
+    times_in_sus_station = 0
     # Iterate through each file in the folder for each bird data location
     for coords in all_bird_stations:
         min_distance = None
@@ -69,38 +69,36 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
                         min_distance = distance
                         closest_file = filename
                 else:
+                    bird_coords = (target_latitude, target_longitude)
+                    obs_coords = (latitude, longitude)
                     min_distance = distance
-    
+                    closest_file = filename
+        """
+        FIX. min_distance is being calculated again before going in the if
+        """
+        
         if min_distance.km < distance_limit:
             key_name = f"Pair_{pair_number}"
             """
             Check if obs station exists. If they exist just append the bird coords there so many bird locations
             are linked with one obs station
             """
-            print(f"The coords I'm searcing are: {obs_coords}")
+            # print(f"The coords I'm searcing are: {obs_coords}")
             for key, value in pairs.items():
-                print(f" and key {key} has these coords: {value['obs_coords']}")
+                # print(f" and key {key} has these coords: {value['obs_coords']}")
                 if obs_coords == value['obs_coords']:
     
-                    print(f"FOUND! I'm at {pair_number}. I'll add {bird_coords} to this key {key}")
+                    # print(f"FOUND! I'm at {pair_number}. I'll add {bird_coords} to this key {key}")
                     pairs[key]['bird_coords'].append(bird_coords)
-                    print(f"and now I have these birds coords: {pairs[key]['bird_coords']}")
-                    print('----')
+                    # print(f"and now I have these birds coords: {pairs[key]['bird_coords']}")
+                    # print('----')
                     break
             else:
-                print(f"So I didnt replace anything but I created a new pair named with key name {key_name}")
-                print("----")
+                # print(f"So I didnt replace anything but I created a new pair named with key name {key_name}")
+                # print("----")
                 pairs[key_name] = {'bird_coords': [bird_coords], 'obs_coords': obs_coords, 'obs_file': closest_file}
                 pair_number += 1
 
-        
-        # Print the closest file name and distance
-        # if closest_file is not None:
-        #     print(f"Bird coords: {target_latitude},{target_longitude}. File coords: {obs_coords}")
-        #     print(f"The closest file is: {closest_file} with a distance of {min_distance} km.")
-        # else:
-        #     print("No file found.")
-     # Create a dictionary to store grouped results
 
     return pairs
     

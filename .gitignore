@@ -1,5 +1,5 @@
 *venv/
-*.txt
+*data/
 *.ipynb
 *.xml
 *.csv

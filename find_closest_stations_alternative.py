@@ -18,7 +18,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
     return distance
 
-def match_bird_and_observation_data(bird_data, folder_path):
+def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     """
     Parameters
     ----------
@@ -80,39 +80,48 @@ def match_bird_and_observation_data(bird_data, folder_path):
                         min_distance = distance
                         closest_file = filename
                 else:
+                    bird_coords = (target_latitude, target_longitude)
+                    obs_coords = (latitude, longitude)
                     min_distance = distance
+                    closest_file = filename
     
-        key_name = f"Pair_{pair_number}"
-        """
-        Check if obs station exists. If they exist just append the bird coords there so many bird locations
-        are linked with one obs station
-        """
-        bird_sites_data_for_pairs = bird_data[(bird_data['lat'] == target_latitude) & (bird_data['lon'] == target_longitude)][['eventDate', 'individualCount', 'lat', 'lon']]
-
-        for key, value in pairs.items():
-            if obs_coords == value['obs_coords']:
-                value['bird_sites'][f'Site_{pair_number}'] = {
-                    'eventDate': bird_sites_data_for_pairs['eventDate'].tolist(),
-                    'individualCount': bird_sites_data_for_pairs['individualCount'].tolist(),
-                    'lat': bird_sites_data_for_pairs['lat'].tolist(),
-                    'lon': bird_sites_data_for_pairs['lon'].tolist()
-                }
-                break
-        else:
-            pairs[key_name] = {
-                'bird_sites': {
-                    f'Site_{pair_number}': {
+        if min_distance.km < distance_limit:
+            key_name = f"Pair_{pair_number}"
+            """
+            Check if obs station exists. If they exist just append the bird coords there so many bird locations
+            are linked with one obs station
+            """
+            bird_sites_data_for_pairs = bird_data[(bird_data['lat'] == target_latitude) & (bird_data['lon'] == target_longitude)][['eventDate', 'individualCount', 'lat', 'lon']]
+            
+            for key, value in pairs.items():
+                if obs_coords == value['obs_coords']:
+                    site_number = len(value['bird_sites'])
+                    value['bird_sites'][f'Site_{site_number}'] = {
                         'eventDate': bird_sites_data_for_pairs['eventDate'].tolist(),
                         'individualCount': bird_sites_data_for_pairs['individualCount'].tolist(),
                         'lat': bird_sites_data_for_pairs['lat'].tolist(),
-                        'lon': bird_sites_data_for_pairs['lon'].tolist()
+                        'lon': bird_sites_data_for_pairs['lon'].tolist(),
+                        
                     }
-                },
-                'obs_coords': obs_coords,
-                'obs_file': closest_file
-            }
-            pair_number += 1
-        
+                    # value['bird_sites'][f'Site_{site_number}']['distance_from_obs_station'].append(min_distance)
+                    break
+            else:
+                site_number = 1
+                pairs[key_name] = {
+                    'bird_sites': {
+                        f'Site_{site_number}': {
+                            'eventDate': bird_sites_data_for_pairs['eventDate'].tolist(),
+                            'individualCount': bird_sites_data_for_pairs['individualCount'].tolist(),
+                            'lat': bird_sites_data_for_pairs['lat'].tolist(),
+                            'lon': bird_sites_data_for_pairs['lon'].tolist(),
+                            # 'distance_from_obs_station': [min_distance]
+                        }
+                    },
+                    'obs_coords': obs_coords,
+                    'obs_file': closest_file
+                }
+                pair_number += 1
+            
         # Print the closest file name and distance
         # if closest_file is not None:
         #     print(f"Bird coords: {target_latitude},{target_longitude}. File coords: {obs_coords}")
@@ -166,7 +175,7 @@ def create_paired_stations_map(pairs):
 
 if __name__ == '__main__':
         
-    filename = 'data/bird_data/nestlings_cleaned.csv'
+    filename = 'data/all_bird_data/all_nestlings_cleaned.csv'
     nestlings = pd.read_csv(filename)
     
     folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/wave-height'
@@ -174,5 +183,5 @@ if __name__ == '__main__':
     pairs = match_bird_and_observation_data(nestlings, folder_path)
     
     # Visualize
-    create_paired_stations_map(pairs)
+    # create_paired_stations_map(pairs)
 
