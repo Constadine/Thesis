@@ -37,9 +37,7 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     
     # Initialize variables to store the closest file name and distance
     closest_file = None
-    min_distance = float('inf')  # Initialize with positive infinity
     pairs = dict()
-
     pair_number = 1
     
     # Iterate through each file in the folder for each bird data location
@@ -50,12 +48,6 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
         for filename in os.listdir(folder_path):  ###### MISTAKE IS HERE. TAKES SAME FILE FOR DIFFERENT COORDS
             if filename.endswith(".csv"):
                 file_path = os.path.join(folder_path, filename)
-                # print(file_path)
-                with open(file_path, 'r') as file:
-                    for i, line in enumerate(file):
-                        if i == 8:  # Print line 5 (0-indexed)
-                            # print(line)
-                            break
                 
                 # Read latitude and longitude from the specified cells (assuming 0-indexed)
                 df = pd.read_csv(file_path, sep=';', nrows=1)
@@ -63,8 +55,6 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
                 latitude = df.iloc[0, 2]  # Assuming latitude is in C2
                 longitude = df.iloc[0, 3]  # Assuming longitude is in D2
                 
-                # print(f'lat: {latitude}, lon:{longitude}')
-                # Calculate distance
                 # distance = haversine(target_latitude, target_longitude, latitude, longitude)
                 """
                 FIX CALCULATION OF DISTANCE
@@ -116,8 +106,6 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     
 def create_paired_stations_map(pairs, output_file_name):   
     """
-    
-
     Parameters
     ----------
     pairs : dict
@@ -172,10 +160,10 @@ if __name__ == '__main__':
     filename = 'data/all_bird_data/all_birds_cleaned.csv'
     nestlings = pd.read_csv(filename)
     
-    folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/seawater-level'
+    folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/wave-height'
 
     pairs = match_bird_and_observation_data(nestlings, folder_path)
     
     # Visualize
-    create_paired_stations_map(pairs, 'all_birds_paired_stations_map.html')
+    create_paired_stations_map(pairs, 'WH-all_birds_paired_stations_map.html')
 
