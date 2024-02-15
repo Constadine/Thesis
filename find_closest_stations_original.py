@@ -1,21 +1,6 @@
 import os
 import pandas as pd
 import geopy.distance
-from math import radians, sin, cos, sqrt, atan2
-from handle_data import load_and_clean_nestling_data
-
-def haversine(lat1, lon1, lat2, lon2):
-    # Convert latitude and longitude from degrees to radians
-    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-
-    # Haversine formula
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    distance = 6371 * c  # Radius of Earth in kilometers
-
-    return distance
 
 def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     """
@@ -33,72 +18,57 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
         so they can be used for correlation.
 
     """
-    all_bird_stations = list(zip(list(bird_data['lat'].unique()), list(bird_data['lon'].unique())))
-    
+    # Create a dictionary to store file information (coordinates and filenames)
+    file_info = {}
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".csv"):
+            file_path = os.path.join(folder_path, filename)
+            
+            # Read latitude and longitude from the specified cells (assuming 0-indexed)
+            df = pd.read_csv(file_path, sep=';', nrows=1)
+            latitude = df.iloc[0, 2]  # Assuming latitude is in C2
+            longitude = df.iloc[0, 3]  # Assuming longitude is in D2
+            
+            file_info[filename] = {'latitude': latitude, 'longitude': longitude}
+
+    # Use unique bird coordinates
+    all_bird_stations = list(zip(bird_data['lat'].unique(), bird_data['lon'].unique()))
+
     # Initialize variables to store the closest file name and distance
-    closest_file = None
     pairs = dict()
     pair_number = 1
-    times_in_sus_station = 0
-    # Iterate through each file in the folder for each bird data location
-    for coords in all_bird_stations:
+
+    # Iterate through each bird data location
+    for bird_coords in all_bird_stations:
         min_distance = None
-        target_latitude, target_longitude = coords[0], coords[1]
+        closest_file = None
         
-        for filename in os.listdir(folder_path):  ###### MISTAKE IS HERE. TAKES SAME FILE FOR DIFFERENT COORDS
-            if filename.endswith(".csv"):
-                file_path = os.path.join(folder_path, filename)
-                
-                # Read latitude and longitude from the specified cells (assuming 0-indexed)
-                df = pd.read_csv(file_path, sep=';', nrows=1)
-                
-                latitude = df.iloc[0, 2]  # Assuming latitude is in C2
-                longitude = df.iloc[0, 3]  # Assuming longitude is in D2
-                
-                # distance = haversine(target_latitude, target_longitude, latitude, longitude)
-                """
-                FIX CALCULATION OF DISTANCE
-                """
-                distance = geopy.distance.distance((target_latitude, target_longitude), (latitude, longitude))
-                
-                # Check if the current file is closer than the previous closest file
-                if min_distance:
-                    if distance < min_distance:
-                        bird_coords = (target_latitude, target_longitude)
-                        obs_coords = (latitude, longitude)
-                        min_distance = distance
-                        closest_file = filename
-                else:
-                    bird_coords = (target_latitude, target_longitude)
-                    obs_coords = (latitude, longitude)
-                    min_distance = distance
-                    closest_file = filename
-        """
-        FIX. min_distance is being calculated again before going in the if
-        """
-        
+        # Iterate through each file in the folder
+        for filename, obs_info in file_info.items():
+            obs_coords = (obs_info['latitude'], obs_info['longitude'])
+            
+            # Calculate distance using geopy
+            distance = geopy.distance.distance(bird_coords, obs_coords)
+            
+            # Check if the current file is closer than the previous closest file
+            if min_distance is None or distance < min_distance:
+                min_distance = distance
+                closest_file = filename
+
+        # Check if the minimum distance is within the limit
         if min_distance.km < distance_limit:
+            obs_coords = (file_info[closest_file]['latitude'], file_info[closest_file]['longitude'])
             key_name = f"Pair_{pair_number}"
-            """
-            Check if obs station exists. If they exist just append the bird coords there so many bird locations
-            are linked with one obs station
-            """
-            # print(f"The coords I'm searcing are: {obs_coords}")
-            for key, value in pairs.items():
-                # print(f" and key {key} has these coords: {value['obs_coords']}")
-                if obs_coords == value['obs_coords']:
-    
-                    # print(f"FOUND! I'm at {pair_number}. I'll add {bird_coords} to this key {key}")
-                    pairs[key]['bird_coords'].append(bird_coords)
-                    # print(f"and now I have these birds coords: {pairs[key]['bird_coords']}")
-                    # print('----')
-                    break
+            
+            # Check if observation station already exists in pairs dictionary
+            if obs_coords in [value['obs_coords'] for value in pairs.values()]:
+                for key, value in pairs.items():
+                    if value['obs_coords'] == obs_coords:
+                        pairs[key]['bird_coords'].append(bird_coords)
+                        break
             else:
-                # print(f"So I didnt replace anything but I created a new pair named with key name {key_name}")
-                # print("----")
                 pairs[key_name] = {'bird_coords': [bird_coords], 'obs_coords': obs_coords, 'obs_file': closest_file}
                 pair_number += 1
-
 
     return pairs
     
@@ -156,12 +126,18 @@ def create_paired_stations_map(pairs, output_file_name):
 if __name__ == '__main__':
         
     filename = 'data/all_bird_data/all_birds_cleaned.csv'
-    nestlings = pd.read_csv(filename)
+    bird_data = pd.read_csv(filename)
     
-    folder_path = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/wave-height'
+    
+    # Choose variable folder
+    CLIMATE_VARIABLE = "seawater-level"
+    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_VARIABLE}'
 
-    pairs = match_bird_and_observation_data(nestlings, folder_path)
+    DISTANCE_LIMIT = 30
+    # Match observation stations with bird observations
+    pairs = match_bird_and_observation_data(bird_data, folder_path, DISTANCE_LIMIT)
     
     # Visualize
-    create_paired_stations_map(pairs, 'WH-all_birds_paired_stations_map.html')
+    output_name = f'all_birds_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
+    create_paired_stations_map(pairs, output_name)
 
