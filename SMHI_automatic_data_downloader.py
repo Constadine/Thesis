@@ -18,7 +18,24 @@ def get_latest_downloaded_file(download_folder):
         return None
 
 
-def download_and_move_all_csvs(url, download_folder, target_folder):
+def download_and_move_all_csvs(url, download_folder, target_folder, chosen_variable=None):
+    """
+    Parameters
+    ----------
+    url : TYPE
+        DESCRIPTION.
+    download_folder : TYPE
+        DESCRIPTION.
+    target_folder : TYPE
+        DESCRIPTION.
+    chosen_variable : str, optional
+        DESCRIPTION. The default is None. It is the ID of the button.
+
+    Returns
+    -------
+    None.
+
+    """
     driver = webdriver.Chrome()
 
     try:
@@ -30,11 +47,36 @@ def download_and_move_all_csvs(url, download_folder, target_folder):
         
         close_kakor.click()
         
-        list_button = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, 'ocobs-stationslist-button'))
-        )
-        list_button.click()
+        if chosen_variable:
+            collapse_variable_choices_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, 'expandable-container-button'))
+            )
+            
+            collapse_variable_choices_button.click()
+            
+            time.sleep(1)
+            
+            choose_variable_button = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, f'button[data-hash="{chosen_variable}"]'))
+                )
+
+            choose_variable_button.click()    
         
+            time.sleep(1)
+
+        if 'oceanografi' in url:
+            list_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'ocobs-stationslist-button'))
+            )
+            list_button.click()
+        elif 'meteorologi' in url:
+            list_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'metobs-stationslist-button'))
+            )
+            list_button.click()
+        
+        time.sleep(1)
+
         table = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "stations-info-table-body"))
         )
@@ -47,8 +89,9 @@ def download_and_move_all_csvs(url, download_folder, target_folder):
             # Click on the row to reveal the download button
             row.click()
 
+            time.sleep(1)
             # Wait for the download button to appear
-            download_button = WebDriverWait(driver, 10).until(
+            download_button = WebDriverWait(driver, 20).until(
                 EC.presence_of_element_located((By.XPATH, '//button[@data-id="corrected-archive"]'))
             )
 
@@ -58,7 +101,7 @@ def download_and_move_all_csvs(url, download_folder, target_folder):
 
             # Add logic to handle the downloaded file, for example, move it to a specific folder
             
-            WebDriverWait(driver, 10).until(
+            WebDriverWait(driver, 20).until(
                 lambda d: get_latest_downloaded_file(download_folder) is not None
                 )
     
@@ -75,11 +118,16 @@ def download_and_move_all_csvs(url, download_folder, target_folder):
                 time.sleep(3)  # Adjust the sleep time based on your download speed
             # Get the latest downloaded file path
             downloaded_file_path = get_latest_downloaded_file(download_folder)
-    
+            
+            # Check if the target folder exists or is a file
+            if not os.path.isdir(target_folder):
+                # Create the target folder if it doesn't exist
+                os.makedirs(target_folder)
+                time.sleep(2)
+
             if downloaded_file_path:
                 # Move the downloaded file to the target folder
                 move(downloaded_file_path, target_folder)
-
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -88,8 +136,9 @@ def download_and_move_all_csvs(url, download_folder, target_folder):
         driver.quit()
 
 
-webpage_url = 'https://www.smhi.se/data/oceanografi/ladda-ner-oceanografiska-observationer#param=seatemperature,stations=core'
+CHOSEN_VARIABLE = 'wind'
+url = 'https://www.smhi.se/data/meteorologi/ladda-ner-meteorologiska-observationer/#param=wind,stations=active'
 download_folder = '/home/kon/Downloads'
-target_folder = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/sea-temp'
-download_and_move_all_csvs(webpage_url, download_folder, target_folder)
+target_folder = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CHOSEN_VARIABLE}'
+download_and_move_all_csvs(url, download_folder, target_folder, chosen_variable=CHOSEN_VARIABLE)
 
