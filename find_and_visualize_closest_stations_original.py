@@ -25,9 +25,14 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
             file_path = os.path.join(folder_path, filename)
             
             # Read latitude and longitude from the specified cells (assuming 0-indexed)
-            df = pd.read_csv(file_path, sep=';', nrows=1)
-            latitude = df.iloc[0, 2]  # Assuming latitude is in C2
-            longitude = df.iloc[0, 3]  # Assuming longitude is in D2
+            if 'meteorologi' in folder_path:
+                df = pd.read_csv(file_path, sep=';', skiprows=8, nrows=1, header=None)
+                latitude = df.iloc[0, 3]  
+                longitude = df.iloc[0, 4] 
+            elif 'oceanografi' in folder_path:    
+                df = pd.read_csv(file_path, sep=';', nrows=1)
+                latitude = df.iloc[0, 2]  
+                longitude = df.iloc[0, 3]  
             
             file_info[filename] = {'latitude': latitude, 'longitude': longitude}
 
@@ -125,19 +130,19 @@ def create_paired_stations_map(pairs, output_file_name):
 
 if __name__ == '__main__':
         
-    filename = 'data/all_bird_data/all_birds_cleaned.csv'
+    filename = 'data/all_bird_data/all_nestlings_cleaned.csv'
     bird_data = pd.read_csv(filename)
     
     
     # Choose variable folder
-    CLIMATE_VARIABLE = "seawater-level"
-    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_VARIABLE}'
+    CLIMATE_VARIABLE = "wind"
+    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/meteorologi/{CLIMATE_VARIABLE}'
 
-    DISTANCE_LIMIT = 30
+    DISTANCE_LIMIT = 20
     # Match observation stations with bird observations
     pairs = match_bird_and_observation_data(bird_data, folder_path, DISTANCE_LIMIT)
     
     # Visualize
-    output_name = f'all_birds_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
+    output_name = f'all_nestlings_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
     create_paired_stations_map(pairs, output_name)
 
