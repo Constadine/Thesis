@@ -2,6 +2,38 @@ import pandas as pd
 from find_and_visualize_closest_stations_original import match_bird_and_observation_data
 import os
 
+def calculate_max_difference(df, n_values):
+    """
+    
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Climate variable dataframe.
+    n_values : TYPE
+        The hour interval span.
+
+    Returns
+    -------
+    None.
+
+    """
+    average_values = df.groupby((df.index // n_values) * n_values)['Sea Level'].mean()
+    
+    difference = average_values.diff()
+    
+    
+    ###
+    
+    # Need to fix to not calculate averages of different years
+    
+    ###
+    # Find the maximum difference and its corresponding date
+    max_difference_index = difference.idxmax()
+    max_difference_date = df.loc[max_difference_index, 'Date']
+    max_difference_value = difference.loc[max_difference_index]
+    
+    return max_difference_date, max_difference_value
 
 
 if __name__ == '__main__':
@@ -33,16 +65,21 @@ if __name__ == '__main__':
 
     
             # Filter data for April
-            df_april = df[(df['Date'].dt.month == 4) & (df['Date'].dt.year.isin(range(2017, 2023)))]
+            df_april = df[(df['Date'].dt.month == 4) & (df['Date'].dt.year.isin(range(2017, 2023)))].reset_index()
     
+            df_april.reset_index(drop=True, inplace=True)
+            df_april.drop(columns='index', inplace=True)    
+
             # Group by year and calculate the mean for each year
             yearly_mean = df_april.groupby(df_april['Date'].dt.year)['Sea Level'].mean()
-    
+            yearly_max = df_april.groupby(df_april['Date'].dt.year)['Sea Level'].max()
+            yearly_max_difference
+
             # Convert the result to a DataFrame
-            yearly_mean_df = pd.DataFrame({'Year': yearly_mean.index, 'April Mean': yearly_mean.values})
+            yearly_df = pd.DataFrame({'Year': yearly_mean.index, 'April Mean': yearly_mean.values, 'April Max': yearly_max.values})
     
             # Add the DataFrame to the dictionary with the filename as the key
-            result_dict[filename] = yearly_mean_df
+            result_dict[filename] = yearly_df
     
     # Example of accessing the results
     for file_name, df in result_dict.items():
