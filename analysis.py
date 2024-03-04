@@ -2,43 +2,55 @@ import pandas as pd
 from find_and_visualize_closest_stations_original import match_bird_and_observation_data
 import os
 
-def calculate_max_difference(df, n_values):
-    """
-    
 
+def calculate_max_difference(df, n_values, climate_variable_column):
+    """
     Parameters
     ----------
     df : pd.DataFrame
         Climate variable dataframe.
-    n_values : TYPE
+    n_values : int
         The hour interval span.
+    climate_variable_column : str
+        Column name for Sea Level values.
 
     Returns
     -------
-    None.
-
+    pd.DataFrame
+        DataFrame with max difference for each year.
     """
-    average_values = df.groupby((df.index // n_values) * n_values)['Sea Level'].mean()
+    max_differences_data =[]
+
+    # Group by year
+    for year, year_df in df.groupby(df['Date'].dt.year):
+        # Calculate differences within each year
+        differences = year_df[climate_variable_column].rolling(window=n_values, min_periods=n_values, step=n_values).mean().diff()
+        
+        # Find the index of the maximum difference
+        max_difference_index = differences.idxmax()
+        
+        # Extract the corresponding date and value
+        max_difference_date = year_df.loc[max_difference_index, 'Date']
+        max_difference_value = differences.loc[max_difference_index]
+        
+        # Append the results for the current year to the list
+        max_differences_data.append({
+            'Year': year,
+            'April Max Diff Date': max_difference_date,
+            'April Max Diff Value': max_difference_value
+        })
+
+    # Create a DataFrame with results for each year
+    max_differences_df = pd.DataFrame(max_differences_data)
     
-    difference = average_values.diff()
-    
-    
-    ###
-    
-    # Need to fix to not calculate averages of different years
-    
-    ###
-    # Find the maximum difference and its corresponding date
-    max_difference_index = difference.idxmax()
-    max_difference_date = df.loc[max_difference_index, 'Date']
-    max_difference_value = difference.loc[max_difference_index]
-    
-    return max_difference_date, max_difference_value
+    return max_differences_df
 
 
 if __name__ == '__main__':
-    filename = 'data/west_bird_data/nestlings_cleaned.csv'
-    bird_data = pd.read_csv(filename)
+    no_data_for_april = []
+    
+    bird_filename = 'data/west_bird_data/nestlings_cleaned.csv'
+    bird_data = pd.read_csv(bird_filename)
     bird_data.drop(columns='Unnamed: 0', inplace=True)
 
     # Choose variable folder
@@ -59,29 +71,80 @@ if __name__ == '__main__':
             file_path = os.path.join(folder_path, filename)
     
             # Read the CSV file
-            df = pd.read_csv(file_path, skiprows=6, delimiter=';')       
+            df = pd.read_csv(file_path, skiprows=6, delimiter=';', low_memory=False)       
             df.rename(columns={'Datum Tid (UTC)': 'Date', 'Havsvattenstånd': 'Sea Level'}, inplace=True)
             df['Date'] = pd.to_datetime(df['Date'])  
 
     
             # Filter data for April
-            df_april = df[(df['Date'].dt.month == 4) & (df['Date'].dt.year.isin(range(2017, 2023)))].reset_index()
+            df_april = df[(df['Date'].dt.month == 4) & (df['Date'].dt.year.isin(range(2017, 2023)))]
     
             df_april.reset_index(drop=True, inplace=True)
-            df_april.drop(columns='index', inplace=True)    
 
-            # Group by year and calculate the mean for each year
-            yearly_mean = df_april.groupby(df_april['Date'].dt.year)['Sea Level'].mean()
-            yearly_max = df_april.groupby(df_april['Date'].dt.year)['Sea Level'].max()
-            yearly_max_difference
+            if not df_april.empty:
+                # Group by year and calculate the mean and max for each year
+                yearly_mean = df_april.groupby(df_april['Date'].dt.year)['Sea Level'].mean()
+                yearly_max = df_april.groupby(df_april['Date'].dt.year)['Sea Level'].max()
+    
+                # Specify the number of hours for the average
+                n_hours = 12  # You can adjust this based on your requirements
+                
+                # Calculate the maximum difference
+                max_difference_df = calculate_max_difference(df_april, n_hours, 'Sea Level')
+                
+                # Convert the results to a DataFrame
+                yearly_df = pd.DataFrame({
+                    'Year': yearly_mean.index,
+                    'April Mean': yearly_mean.values,
+                    'April Max': yearly_max.values,
+                    'April Max Diff Date': max_difference_df['April Max Diff Date'].values,
+                    'April Max Diff Value': max_difference_df['April Max Diff Value'].values
+                })
+        
+                # Add the DataFrame to the dictionary with the filename as the key
+                result_dict[filename] = yearly_df
+            else:
+                # print(f"No data for April in {filename}")
+                no_data_for_april.append(filename)
+    
+    # Find big changes in the climate variable and keep the station that produces it to investigate
+    max_diff_station = None
+    max_diff_value = 0
+    
+    # Find the station with the biggest April Max Difference value
+    for filename, values in result_dict.items():
+        current_max_diff_value = values['April Max Diff Value'].max()
+        if current_max_diff_value > max_diff_value:
+            max_diff_value = current_max_diff_value
+            max_diff_station = filename
+    
+    selected_pair = None
+    while not selected_pair and max_diff_station:
+        # Check if the station is in any pair's 'obs_file' value in the pairs dictionary
+        for pair, info in pairs.items():
+            if info['obs_file'] == max_diff_station:
+                selected_pair = pair
+                break
+    
+        if not selected_pair:
+            # If the selected station is not in pairs, find the next biggest difference station
+            max_diff_value = 0
+            for filename, values in result_dict.items():
+                current_max_diff_value = values['April Max Diff Value'].max()
+                if current_max_diff_value > max_diff_value and filename != max_diff_station:
+                    max_diff_value = current_max_diff_value
+                    max_diff_station = filename
+                    break  # Exit the loop after finding the next station
 
-            # Convert the result to a DataFrame
-            yearly_df = pd.DataFrame({'Year': yearly_mean.index, 'April Mean': yearly_mean.values, 'April Max': yearly_max.values})
+    if selected_pair:
+        print(f"Selected pair for analysis: {selected_pair}")
     
-            # Add the DataFrame to the dictionary with the filename as the key
-            result_dict[filename] = yearly_df
+        temporal_variability = result_dict[max_diff_station]['April Max Diff Value'].std()
+        temporal_range = result_dict[max_diff_station]['April Max Diff Value'].max() - result_dict[max_diff_station]['April Max Diff Value'].min()
     
-    # Example of accessing the results
-    for file_name, df in result_dict.items():
-        print(f"File: {file_name}")
-        print(df)
+        ##### CONTINUE HERE #####
+        
+        # CONTINUE ANALYSIS 
+
+    else:
+        print("No suitable pair found.")
