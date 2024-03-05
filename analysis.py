@@ -138,7 +138,21 @@ if __name__ == '__main__':
 
     if selected_pair:
         print(f"Selected pair for analysis: {selected_pair}")
-    
+        
+        
+        selected_bird_coords = pairs[selected_pair]['bird_coords']
+        selected_birds_dfs = []
+        
+        for bird_coord in selected_bird_coords:
+            # Filter bird_data for each set of coordinates
+            selected_birds_df = bird_data[(bird_data.lat == bird_coord[0]) & (bird_data.lon == bird_coord[1])]
+            
+            # Append the filtered DataFrame to the list
+            selected_birds_dfs.append(selected_birds_df)
+
+# Now, selected_birds_dfs is a list of DataFrames, each corresponding to a set of bird coordinates
+
+        
         temporal_variability = result_dict[max_diff_station]['April Max Diff Value'].std()
         temporal_range = result_dict[max_diff_station]['April Max Diff Value'].max() - result_dict[max_diff_station]['April Max Diff Value'].min()
     

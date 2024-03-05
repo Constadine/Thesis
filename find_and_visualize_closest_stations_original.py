@@ -135,8 +135,9 @@ if __name__ == '__main__':
     
     
     # Choose variable folder
-    CLIMATE_VARIABLE = "wind"
-    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/meteorologi/{CLIMATE_VARIABLE}'
+    CLIMATE_VARIABLE = "seawater-level"
+    CLIMATE_FOLDER = ['oceanografi' ,'meteorologi']
+    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_FOLDER[0]}/{CLIMATE_VARIABLE}'
 
     DISTANCE_LIMIT = 20
     # Match observation stations with bird observations
