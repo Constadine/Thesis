@@ -3,7 +3,7 @@ from find_and_visualize_closest_stations_original import match_bird_and_observat
 import os
 
 
-def calculate_max_difference(df, n_values, climate_variable_column):
+def calculate_concecutive_differences(df, n_values, climate_variable_column, diffs_threshold=None):
     """
     Parameters
     ----------
@@ -24,14 +24,16 @@ def calculate_max_difference(df, n_values, climate_variable_column):
     # Group by year
     for year, year_df in df.groupby(df['Date'].dt.year):
         # Calculate differences within each year
-        differences = year_df[climate_variable_column].rolling(window=n_values, min_periods=n_values, step=n_values).mean().diff()
+        diffs = year_df[climate_variable_column].rolling(window=n_values, min_periods=n_values, step=n_values).mean().diff()
         
         # Find the index of the maximum difference
-        max_difference_index = differences.idxmax()
+        diffs_above_threshold = diffs[diffs > 10]
+        diffs_above_threshold_indexes = diffs_above_threshold.index
+        max_difference_index = diffs.idxmax()
         
         # Extract the corresponding date and value
         max_difference_date = year_df.loc[max_difference_index, 'Date']
-        max_difference_value = differences.loc[max_difference_index]
+        max_difference_value = diffs.loc[max_difference_index]
         
         # Append the results for the current year to the list
         max_differences_data.append({
@@ -94,9 +96,9 @@ if __name__ == '__main__':
     
                 # Specify the number of hours for the average
                 n_hours = 12  # You can adjust this based on your requirements
-                
+                climate_variable_column = 'Sea Level'
                 # Calculate the maximum difference
-                max_difference_df = calculate_max_difference(df_nesting_window, n_hours, 'Sea Level')
+                max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column)
                 
                 # Convert the results to a DataFrame
                 yearly_df = pd.DataFrame({
