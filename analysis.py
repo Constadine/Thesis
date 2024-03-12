@@ -19,7 +19,7 @@ def calculate_concecutive_differences(df, n_values, climate_variable_column, dif
     pd.DataFrame
         DataFrame with max difference for each year.
     """
-    max_differences_data =[]
+    max_differences_data = []
 
     # Group by year
     for year, year_df in df.groupby(df['Date'].dt.year):
@@ -27,13 +27,17 @@ def calculate_concecutive_differences(df, n_values, climate_variable_column, dif
         diffs = year_df[climate_variable_column].rolling(window=n_values, min_periods=n_values, step=n_values).mean().diff()
         
         # Find the index of the maximum difference
-        diffs_above_threshold = diffs[diffs > 10]
+        diffs_above_threshold = diffs[diffs > diffs_threshold]
         diffs_above_threshold_indexes = diffs_above_threshold.index
         max_difference_index = diffs.idxmax()
+        
+        ##### CONTINUE HERE. DETECT ALL THE OCCURENCES OF EXTREMES
         
         # Extract the corresponding date and value
         max_difference_date = year_df.loc[max_difference_index, 'Date']
         max_difference_value = diffs.loc[max_difference_index]
+        
+        
         
         # Append the results for the current year to the list
         max_differences_data.append({
@@ -57,7 +61,8 @@ if __name__ == '__main__':
 
     # Choose variable folder
     CLIMATE_VARIABLE = "seawater-level"
-    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/oceanografi/{CLIMATE_VARIABLE}'
+    CLIMATE_FOLDER = "oceanografi"
+    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_FOLDER}/{CLIMATE_VARIABLE}'
 
     DISTANCE_LIMIT = 20
     # Match observation stations with bird observations
@@ -69,6 +74,7 @@ if __name__ == '__main__':
     pairs['month'] = pairs['eventDate'].dt.month
     
     grouped_pairs = pairs.groupby(by=['obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
+   
     # Initialize an empty list to store the results
     result_list = []
     
@@ -80,9 +86,9 @@ if __name__ == '__main__':
             # Read the CSV file
             df = pd.read_csv(file_path, skiprows=6, delimiter=';', low_memory=False)       
             df.rename(columns={'Datum Tid (UTC)': 'Date', 'Havsvattenstånd': 'Sea Level'}, inplace=True)
-            df['Date'] = pd.to_datetime(df['Date'])  
+            df = df.iloc[:, :2]
 
-            
+            df['Date'] = pd.to_datetime(df['Date']) 
     
             # Filter data for April
             df_nesting_window = df[(df['Date'].dt.month.isin([4,5,6])) & (df['Date'].dt.year.isin(range(2017, 2023)))]
