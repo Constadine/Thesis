@@ -10,7 +10,8 @@ def calculate_concecutive_differences(df, n_values, climate_variable_column, dif
     df : pd.DataFrame
         Climate variable dataframe.
     n_values : int
-        The hour interval span.
+        The hour interval span. The window represented is double this value. For example if I select 
+        12 hour n_values that means the extreme could have happened in the span of the last 24 hours.
     climate_variable_column : str
         Column name for Sea Level values.
 
@@ -34,16 +35,22 @@ def calculate_concecutive_differences(df, n_values, climate_variable_column, dif
         ##### CONTINUE HERE. DETECT ALL THE OCCURENCES OF EXTREMES
         
         # Extract the corresponding date and value
+        above_threshold_dates = list(year_df.loc[diffs_above_threshold_indexes, 'Date'].values)
+        above_threshold_values = list(diffs_above_threshold.values)
+
         max_difference_date = year_df.loc[max_difference_index, 'Date']
         max_difference_value = diffs.loc[max_difference_index]
         
         
-        
+        # Extract the corresponding dates and values
+
         # Append the results for the current year to the list
         max_differences_data.append({
             'Year': year,
-            'April Max Diff Date': max_difference_date,
-            'April Max Diff Value': max_difference_value
+            'Above Threshold Dates': above_threshold_dates,
+            'Above Threshold Values': above_threshold_values,
+            'All Time Max Diff Date': max_difference_date,
+            'All Time Max Diff Value': max_difference_value
         })
 
     # Create a DataFrame with results for each year
@@ -74,9 +81,12 @@ if __name__ == '__main__':
     pairs['month'] = pairs['eventDate'].dt.month
     
     grouped_pairs = pairs.groupby(by=['obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
-   
+
     # Initialize an empty list to store the results
     result_list = []
+  
+    #######
+    # I NEED TO KEEP WHICH STATION IS GIVING THE EXTREMES SO I CAN LATER CHECK WITH PAIRS
     
     # Iterate through each file in the folder
     for filename in os.listdir(folder_path):
@@ -89,7 +99,7 @@ if __name__ == '__main__':
             df = df.iloc[:, :2]
 
             df['Date'] = pd.to_datetime(df['Date']) 
-    
+
             # Filter data for April
             df_nesting_window = df[(df['Date'].dt.month.isin([4,5,6])) & (df['Date'].dt.year.isin(range(2017, 2023)))]
     
@@ -103,16 +113,19 @@ if __name__ == '__main__':
                 # Specify the number of hours for the average
                 n_hours = 12  # You can adjust this based on your requirements
                 climate_variable_column = 'Sea Level'
+                
                 # Calculate the maximum difference
-                max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column)
+                max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column, diffs_threshold=10)
                 
                 # Convert the results to a DataFrame
                 yearly_df = pd.DataFrame({
                     'Year': yearly_mean.index,
-                    'April Mean': yearly_mean.values,
-                    'April Max': yearly_max.values,
-                    'April Max Diff Date': max_difference_df['April Max Diff Date'].values,
-                    'April Max Diff Value': max_difference_df['April Max Diff Value'].values
+                    'Mean': yearly_mean.values,
+                    'Max': yearly_max.values,
+                    'All Time Max Diff Date': max_difference_df['All Time Max Diff Date'].values,
+                    'All Time Max Diff Value': max_difference_df['All Time Max Diff Value'].values,
+                    'Above Threshold Dates': max_difference_df['Above Threshold Dates'],
+                    'Above Threshold Values': max_difference_df['Above Threshold Values'],
                 })
         
                 # Add the DataFrame to the dictionary with the filename as the key
@@ -126,10 +139,8 @@ if __name__ == '__main__':
 
     ##### CONTINUE HERE #####
         
-        
         ## Create two groups one with the extreme events and one with the normal and compare the populations. 
         
         ### Check if the climate during nesting is affectiing the population more than after the period of nesting.
         
-        # CONTINUE ANALYSIS     
-
+        # CONTINUE ANALYSIS

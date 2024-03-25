@@ -2,81 +2,6 @@ import os
 import pandas as pd
 import geopy.distance
 
-# def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
-#     """
-#     Parameters
-#     ----------
-#     bird_data : pd.DataFrame
-#         DESCRIPTION.
-#     folder_path : str
-#         DESCRIPTION.
-
-#     Returns
-#     -------
-#     pairs : dict
-#         Detect closest observation stations to the bird observation locations and pair them in dictionary 
-#         so they can be used for correlation.
-
-#     """
-#     # Create a dictionary to store file information (coordinates and filenames)
-#     file_info = {}
-#     for filename in os.listdir(folder_path):
-#         if filename.endswith(".csv"):
-#             file_path = os.path.join(folder_path, filename)
-            
-#             # Read latitude and longitude from the specified cells (assuming 0-indexed)
-#             if 'meteorologi' in folder_path:
-#                 df = pd.read_csv(file_path, sep=';', skiprows=8, nrows=1, header=None)
-#                 latitude = df.iloc[0, 3]  
-#                 longitude = df.iloc[0, 4] 
-#             elif 'oceanografi' in folder_path:    
-#                 df = pd.read_csv(file_path, sep=';', nrows=1)
-#                 latitude = df.iloc[0, 2]  
-#                 longitude = df.iloc[0, 3]  
-            
-#             file_info[filename] = {'latitude': latitude, 'longitude': longitude}
-
-#     # Use unique bird coordinates
-#     all_bird_stations = list(zip(bird_data['lat'].unique(), bird_data['lon'].unique()))
-
-#     # Initialize variables to store the closest file name and distance
-#     pairs = dict()
-#     pair_number = 1
-
-#     # Iterate through each bird data location
-#     for bird_coords in all_bird_stations:
-#         min_distance = None
-#         closest_file = None
-        
-#         # Iterate through each file in the folder
-#         for filename, obs_info in file_info.items():
-#             obs_coords = (obs_info['latitude'], obs_info['longitude'])
-            
-#             # Calculate distance using geopy
-#             distance = geopy.distance.distance(bird_coords, obs_coords)
-            
-#             # Check if the current file is closer than the previous closest file
-#             if min_distance is None or distance < min_distance:
-#                 min_distance = distance
-#                 closest_file = filename
-
-#         # Check if the minimum distance is within the limit
-#         if min_distance.km < distance_limit:
-#             obs_coords = (file_info[closest_file]['latitude'], file_info[closest_file]['longitude'])
-#             key_name = f"Pair_{pair_number}"
-            
-#             # Check if observation station already exists in pairs dictionary
-#             if obs_coords in [value['obs_coords'] for value in pairs.values()]:
-#                 for key, value in pairs.items():
-#                     if value['obs_coords'] == obs_coords:
-#                         pairs[key]['bird_coords'].append(bird_coords)
-#                         break
-#             else:
-#                 pairs[key_name] = {'bird_coords': [bird_coords], 'obs_coords': obs_coords, 'obs_file': closest_file}
-#                 pair_number += 1
-
-#     return pairs
-    
 
 def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
     # Create a dictionary to store file information (coordinates and filenames)
@@ -89,7 +14,7 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
             if 'meteorologi' in folder_path:
                 df = pd.read_csv(file_path, sep=';', skiprows=8, nrows=1, header=None)
                 latitude = df.iloc[0, 3]  
-                longitude = df.iloc(0, 4)
+                longitude = df.iloc[0, 4]
             elif 'oceanografi' in folder_path:    
                 df = pd.read_csv(file_path, sep=';', nrows=1)
                 latitude = df.iloc[0, 2]  

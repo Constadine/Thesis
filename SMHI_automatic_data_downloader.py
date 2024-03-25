@@ -136,9 +136,10 @@ def download_and_move_all_csvs(url, download_folder, target_folder, chosen_varia
         driver.quit()
 
 
-CHOSEN_VARIABLE = 'wind'
-url = 'https://www.smhi.se/data/meteorologi/ladda-ner-meteorologiska-observationer/#param=wind,stations=active'
+CHOSEN_VARIABLE = 'airPressure'
+CLIMATE_FOLDER = 'meteorologi'
+url ='https://www.smhi.se/data/meteorologi/ladda-ner-meteorologiska-observationer/#param=airPressure,stations=active,stationid=173810'
 download_folder = '/home/kon/Downloads'
-target_folder = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CHOSEN_VARIABLE}'
+target_folder = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_FOLDER}/{CHOSEN_VARIABLE}'
 download_and_move_all_csvs(url, download_folder, target_folder, chosen_variable=CHOSEN_VARIABLE)
 
