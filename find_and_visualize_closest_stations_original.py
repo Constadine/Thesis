@@ -68,14 +68,14 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
 
     return result_df
 
-def create_paired_stations_map(pairs, output_file_name):   
+def create_paired_stations_map(pairs_df, output_file_name):   
     """
     Parameters
     ----------
-    pairs : dict
-        DESCRIPTION.
+    pairs_df : pandas DataFrame
+        DataFrame containing paired station data. It should have columns 'obs_lat', 'obs_lon', 'bird_lat', 'bird_lon'.
     output_file_name : str
-        Should be an .html file.
+        Name of the output HTML file.
 
     Returns
     -------
@@ -85,39 +85,41 @@ def create_paired_stations_map(pairs, output_file_name):
     import folium
     from folium import PolyLine
     
-    # Create a folium map centered around the average coordinates
-    average_coords = [
-        sum(coord[0] for pair in pairs.values() for coord in pair['bird_coords']) / len([coord for pair in pairs.values() for coord in pair['bird_coords']]),
-        sum(coord[1] for pair in pairs.values() for coord in pair['bird_coords']) / len([coord for pair in pairs.values() for coord in pair['bird_coords']])
-    ]
+    # Calculate average coordinates
+    average_obs_lat = pairs_df['obs_lat'].mean()
+    average_obs_lon = pairs_df['obs_lon'].mean()
+    average_bird_lat = pairs_df['bird_lat'].mean()
+    average_bird_lon = pairs_df['bird_lon'].mean()
+    average_coords = [(average_obs_lat + average_bird_lat) / 2, (average_obs_lon + average_bird_lon) / 2]
     
+    # Create a folium map centered around the average coordinates
     mymap = folium.Map(location=average_coords, zoom_start=8)
     
     # Add markers and connecting lines for each pair
-    for pair_key, pair_value in pairs.items():
-        obs_coords = pair_value['obs_coords']
+    for index, row in pairs_df.iterrows():
+        obs_coords = (row['obs_lat'], row['obs_lon'])
+        bird_coords = (row['bird_lat'], row['bird_lon'])
         
         # Add red marker for observation coordinates
         folium.Marker(
             location=obs_coords,
             icon=folium.Icon(color='red'),
-            popup=f"Pair: {pair_key}<br>Obs Coords: {obs_coords}",
+            popup=f"Pair: {index}<br>Obs Coords: {obs_coords}",
         ).add_to(mymap)
     
-        # Add blue markers for bird coordinates
-        for bird_coord in pair_value['bird_coords']:
-            folium.Marker(
-                location=bird_coord,
-                icon=folium.Icon(color='blue'),
-                popup=f"Pair: {pair_key}<br>Bird Coords: {bird_coord}",
-            ).add_to(mymap)
+        # Add blue marker for bird coordinates
+        folium.Marker(
+            location=bird_coords,
+            icon=folium.Icon(color='blue'),
+            popup=f"Pair: {index}<br>Bird Coords: {bird_coords}",
+        ).add_to(mymap)
     
-            # Add connecting lines between bird and observation coordinates
-            PolyLine(locations=[bird_coord, obs_coords], color="black").add_to(mymap)
+        # Add connecting lines between bird and observation coordinates
+        PolyLine(locations=[bird_coords, obs_coords], color="black").add_to(mymap)
     
     # Save the map to an HTML file
-    output_file_name = output_file_name
     mymap.save(output_file_name)
+    
 
 if __name__ == '__main__':
         
@@ -131,11 +133,11 @@ if __name__ == '__main__':
     CLIMATE_FOLDER = ['oceanografi' ,'meteorologi']
     folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_FOLDER[0]}/{CLIMATE_VARIABLE}'
 
-    DISTANCE_LIMIT = 20
+    DISTANCE_LIMIT = 10
     # Match observation stations with bird observations
     pairs = match_bird_and_observation_data(grouped_bird_data, folder_path, DISTANCE_LIMIT)
     
     # Visualize
-    # output_name = f'all_nestlings_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
-    # create_paired_stations_map(pairs, output_name)
+    output_name = f'all_nestlings_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
+    create_paired_stations_map(pairs, output_name)
 

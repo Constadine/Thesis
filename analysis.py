@@ -1,7 +1,7 @@
 import pandas as pd
 from find_and_visualize_closest_stations_original import match_bird_and_observation_data
 import os
-
+from climate_configs import configs
 
 def calculate_concecutive_differences(df, n_values, climate_variable_column, diffs_threshold=None):
     """
@@ -67,11 +67,12 @@ if __name__ == '__main__':
     bird_data.drop(columns='Unnamed: 0', inplace=True)
 
     # Choose variable folder
-    CLIMATE_VARIABLE = "seawater-level"
-    CLIMATE_FOLDER = "oceanografi"
+    CLIMATE_VARIABLE = "wind"
+    CLIMATE_FOLDER = "meteorologi"
     folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_FOLDER}/{CLIMATE_VARIABLE}'
-
-    DISTANCE_LIMIT = 20
+    config = configs[CLIMATE_VARIABLE]
+    
+    DISTANCE_LIMIT = 10
     # Match observation stations with bird observations
     pairs = match_bird_and_observation_data(bird_data, folder_path, DISTANCE_LIMIT)
     pairs.eventDate = pd.to_datetime(pairs.eventDate)
@@ -80,6 +81,7 @@ if __name__ == '__main__':
     pairs['year'] = pairs['eventDate'].dt.year
     pairs['month'] = pairs['eventDate'].dt.month
     
+    # Group the pairs as very records are from the same area. So basically add all the populations of specific bird locations
     grouped_pairs = pairs.groupby(by=['obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
 
     # Initialize an empty list to store the results
@@ -91,45 +93,51 @@ if __name__ == '__main__':
     # Iterate through each file in the folder
     for filename in os.listdir(folder_path):
         if filename.endswith(".csv"):
-            file_path = os.path.join(folder_path, filename)
+            if filename in pairs['obs_file'].values:
     
-            # Read the CSV file
-            df = pd.read_csv(file_path, skiprows=6, delimiter=';', low_memory=False)       
-            df.rename(columns={'Datum Tid (UTC)': 'Date', 'Havsvattenstånd': 'Sea Level'}, inplace=True)
-            df = df.iloc[:, :2]
-
-            df['Date'] = pd.to_datetime(df['Date']) 
-
-            # Filter data for April
-            df_nesting_window = df[(df['Date'].dt.month.isin([4,5,6])) & (df['Date'].dt.year.isin(range(2017, 2023)))]
-    
-            df_nesting_window.reset_index(drop=True, inplace=True)
-
-            if not df_nesting_window.empty:
-                # Group by year and calculate the mean and max for each year
-                yearly_mean = df_nesting_window.groupby(df_nesting_window['Date'].dt.year)['Sea Level'].mean()
-                yearly_max = df_nesting_window.groupby(df_nesting_window['Date'].dt.year)['Sea Level'].max()
-    
-                # Specify the number of hours for the average
-                n_hours = 12  # You can adjust this based on your requirements
-                climate_variable_column = 'Sea Level'
-                
-                # Calculate the maximum difference
-                max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column, diffs_threshold=10)
-                
-                # Convert the results to a DataFrame
-                yearly_df = pd.DataFrame({
-                    'Year': yearly_mean.index,
-                    'Mean': yearly_mean.values,
-                    'Max': yearly_max.values,
-                    'All Time Max Diff Date': max_difference_df['All Time Max Diff Date'].values,
-                    'All Time Max Diff Value': max_difference_df['All Time Max Diff Value'].values,
-                    'Above Threshold Dates': max_difference_df['Above Threshold Dates'],
-                    'Above Threshold Values': max_difference_df['Above Threshold Values'],
-                })
+                file_path = os.path.join(folder_path, filename)
         
-                # Add the DataFrame to the dictionary with the filename as the key
-                result_list.append(yearly_df)
+                # How to read the files could be tricky due to them being different. Have to check cases
+                df = pd.read_csv(file_path, skiprows=config['skiprows'], usecols=config['usecols'], delimiter=config['delimiter'], low_memory=False)       
+                df.columns = config['column_names']
+                climate_variable_column = config['value_column']
+                date_column = config['date_column']
+                # df = df.iloc[:, :2]
+    
+                df[date_column] = pd.to_datetime(df[date_column]) 
+    
+                # Filter data for period of interest
+                df_nesting_window = df[(df[date_column].dt.month.isin([4,5,6])) & (df[date_column].dt.year.isin(range(2017, 2023)))]
+        
+                df_nesting_window.reset_index(drop=True, inplace=True)
+    
+                if not df_nesting_window.empty:
+
+                    # Group by year and calculate the mean and max for each year
+                    yearly_mean = df_nesting_window.groupby(df_nesting_window[date_column].dt.year)[climate_variable_column].mean()
+                    yearly_max = df_nesting_window.groupby(df_nesting_window[date_column].dt.year)[climate_variable_column].max()
+        
+                    # Specify the number of hours for the average
+                    n_hours = 12  # You can adjust this based on your requirements
+                    
+                    # Calculate the maximum difference
+                    max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column, diffs_threshold=10)
+                    
+                    # Convert the results to a DataFrame
+                    yearly_df = pd.DataFrame({
+                        'Year': yearly_mean.index,
+                        'Mean': yearly_mean.values,
+                        'Max': yearly_max.values,
+                        'All Time Max Diff Date': max_difference_df['All Time Max Diff Date'].values,
+                        'All Time Max Diff Value': max_difference_df['All Time Max Diff Value'].values,
+                        'Above Threshold Dates': max_difference_df['Above Threshold Dates'],
+                        'Above Threshold Values': max_difference_df['Above Threshold Values'],
+                    })
+            
+                    # Add the DataFrame to the dictionary with the filename as the key
+                    result_list.append(yearly_df)
+                else:
+                    print(f"{filename} is not in pairs so skiiip")
             else:
                 # print(f"No data for April in {filename}")
                 no_data_for_nesting_window.append(filename)
