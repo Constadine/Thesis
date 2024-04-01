@@ -94,9 +94,13 @@ if __name__ == '__main__':
     # Initialize an empty list to store the results
     result_list = []
   
-    #######
+    ####### 02-04 #######
+    
     # I NEED TO KEEP WHICH STATION IS GIVING THE EXTREMES SO I CAN LATER CHECK WITH PAIRS
     
+    ####### 02-04 #######
+    
+
     # Iterate through each file in the folder
     for filename in os.listdir(folder_path):
         if filename.endswith(".csv"):
