@@ -1,7 +1,8 @@
 import pandas as pd
-from find_and_visualize_closest_stations_original import match_bird_and_observation_data
+from find_and_visualize_closest_stations import match_bird_and_observation_data
 import os
 from climate_configs import configs
+from useful_methods import load_and_clean_climate_data
 
 def calculate_concecutive_differences(df, n_values, climate_variable_column, diffs_threshold=None):
     """
@@ -59,29 +60,35 @@ def calculate_concecutive_differences(df, n_values, climate_variable_column, dif
     return max_differences_df
 
 
+
 if __name__ == '__main__':
     no_data_for_nesting_window = []
     
+    # Load bird data
     bird_filename = 'data/all_bird_data/all_birds_cleaned.csv'
     bird_data = pd.read_csv(bird_filename)
     bird_data.drop(columns='Unnamed: 0', inplace=True)
 
-    # Choose variable folder
-    CLIMATE_VARIABLE = "wind"
-    CLIMATE_FOLDER = "meteorologi"
-    folder_path = f'/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/{CLIMATE_FOLDER}/{CLIMATE_VARIABLE}'
+    # Choose folder to load climate data
+    # CLIMATE_FOLDER_OPTIONS = "meteorologi", "oceanografi"
+    CLIMATE_FOLDER= "meteorologi"
+    
+    # CLIMATE_VARIABLE_OPTIONS = "wind", "air_temperature", "air_pressure", "sea_temp", "seawater_level", "wave_height"
+    CLIMATE_VARIABLE = "air_temperature"
+    folder_path = os.path.join('data', 'SMHI', CLIMATE_FOLDER, CLIMATE_VARIABLE)
+    
     config = configs[CLIMATE_VARIABLE]
     
-    DISTANCE_LIMIT = 10
     # Match observation stations with bird observations
+    DISTANCE_LIMIT = 10 # Depending on climate variable chosen, distance limit should be adjusted. Measured in km.
+    
+    # Link bird observation locations with closest climate observation station
     pairs = match_bird_and_observation_data(bird_data, folder_path, DISTANCE_LIMIT)
     pairs.eventDate = pd.to_datetime(pairs.eventDate)
     
-    # Calculate population by grouping observation stations and bird locations
+    # Group the pairs as very records are from the same area. So basically add all the populations of specific bird locations
     pairs['year'] = pairs['eventDate'].dt.year
     pairs['month'] = pairs['eventDate'].dt.month
-    
-    # Group the pairs as very records are from the same area. So basically add all the populations of specific bird locations
     grouped_pairs = pairs.groupby(by=['obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
 
     # Initialize an empty list to store the results
@@ -96,21 +103,16 @@ if __name__ == '__main__':
             if filename in pairs['obs_file'].values:
     
                 file_path = os.path.join(folder_path, filename)
-        
-                # How to read the files could be tricky due to them being different. Have to check cases
-                df = pd.read_csv(file_path, skiprows=config['skiprows'], usecols=config['usecols'], delimiter=config['delimiter'], low_memory=False)       
-                df.columns = config['column_names']
+           
+                df = load_and_clean_climate_data(file_path, config)
                 climate_variable_column = config['value_column']
                 date_column = config['date_column']
-                # df = df.iloc[:, :2]
-    
-                df[date_column] = pd.to_datetime(df[date_column]) 
     
                 # Filter data for period of interest
                 df_nesting_window = df[(df[date_column].dt.month.isin([4,5,6])) & (df[date_column].dt.year.isin(range(2017, 2023)))]
         
                 df_nesting_window.reset_index(drop=True, inplace=True)
-    
+
                 if not df_nesting_window.empty:
 
                     # Group by year and calculate the mean and max for each year
