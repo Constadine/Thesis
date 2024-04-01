@@ -1,4 +1,6 @@
-climate_data = '/home/kon/Documents/Sweden/Master/Thesis/Code/Thesis/data/SMHI/'
+import os
+
+climate_data = os.path.join('data', 'SMHI')
 
 configs = {
     'air_temperature': {
