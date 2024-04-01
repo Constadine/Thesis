@@ -40,7 +40,7 @@ configs = {
             },
         },
     },
-    
+
     'sea_temp': {
         'file_path_pattern': f'{climate_data}/oceanografi/sea_temp/*.csv',
         'skiprows': 6,
@@ -60,7 +60,7 @@ configs = {
             },
         },
     },
-    
+
     'seawater_level': {
         'file_path_pattern': f'{climate_data}/oceanografi//*.csv',
         'skiprows': 6,
@@ -80,7 +80,7 @@ configs = {
             },
         },
     },
-        
+
     'wave_height': {
         'file_path_pattern': f'{climate_data}/oceanografi/wave_height/*.csv',
         'skiprows': 10,
@@ -100,12 +100,12 @@ configs = {
             },
         },
     },
-        # FIX DELIMITER HERE 
+    # FIX DELIMITER HERE
     'wind': {
         'file_path_pattern': f'{climate_data}/meteorologi/wind/*.csv',
         'skiprows': 10,
         'usecols': [0, 4],
-        'delimiter': r'[;,]',
+        'delimiter': ';',
         'column_names': ['Date', 'Wind Speed'],
         'date_column': 'Date',
         'value_column': 'Wind Speed',
@@ -119,6 +119,6 @@ configs = {
                 'yearly_metric_name': 'Yearly Std Dev Wind Speed'
             },
         },
-    },      
+    },
     # Add other variables with similar structure
 }
