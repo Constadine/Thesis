@@ -71,10 +71,10 @@ if __name__ == '__main__':
 
     # Choose folder to load climate data
     # CLIMATE_FOLDER_OPTIONS = "meteorologi", "oceanografi"
-    CLIMATE_FOLDER= "meteorologi"
+    CLIMATE_FOLDER= "oceanografi"
     
     # CLIMATE_VARIABLE_OPTIONS = "wind", "air_temperature", "air_pressure", "sea_temp", "seawater_level", "wave_height"
-    CLIMATE_VARIABLE = "air_temperature"
+    CLIMATE_VARIABLE = "wave_height"
     folder_path = os.path.join('data', 'SMHI', CLIMATE_FOLDER, CLIMATE_VARIABLE)
     
     config = configs[CLIMATE_VARIABLE]
@@ -89,17 +89,11 @@ if __name__ == '__main__':
     # Group the pairs as very records are from the same area. So basically add all the populations of specific bird locations
     pairs['year'] = pairs['eventDate'].dt.year
     pairs['month'] = pairs['eventDate'].dt.month
-    grouped_pairs = pairs.groupby(by=['obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
+    grouped_pairs = pairs.groupby(by=['obs_file','obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
 
     # Initialize an empty list to store the results
     result_list = []
   
-    ####### 02-04 #######
-    
-    # I NEED TO KEEP WHICH STATION IS GIVING THE EXTREMES SO I CAN LATER CHECK WITH PAIRS
-    
-    ####### 02-04 #######
-    
 
     # Iterate through each file in the folder
     for filename in os.listdir(folder_path):
@@ -109,6 +103,7 @@ if __name__ == '__main__':
                 file_path = os.path.join(folder_path, filename)
            
                 df = load_and_clean_climate_data(file_path, config)
+                
                 climate_variable_column = config['value_column']
                 date_column = config['date_column']
     
@@ -127,11 +122,15 @@ if __name__ == '__main__':
                     n_hours = 12  # You can adjust this based on your requirements
                     
                     # Calculate the maximum difference
-                    max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column, diffs_threshold=10)
+                    DIFFERENCE_THRESHOLD = 10
+                    max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column, DIFFERENCE_THRESHOLD)
+                    
+                    ## MAKE IT A FUNCTION DUDE ## 03-04
                     
                     # Convert the results to a DataFrame
                     yearly_df = pd.DataFrame({
                         'Year': yearly_mean.index,
+                        'Station': filename,
                         'Mean': yearly_mean.values,
                         'Max': yearly_max.values,
                         'All Time Max Diff Date': max_difference_df['All Time Max Diff Date'].values,
@@ -152,9 +151,15 @@ if __name__ == '__main__':
     result_df = pd.concat(result_list, ignore_index=True)
 
     ##### CONTINUE HERE #####
-        
-        ## Create two groups one with the extreme events and one with the normal and compare the populations. 
-        
-        ### Check if the climate during nesting is affectiing the population more than after the period of nesting.
-        
-        # CONTINUE ANALYSIS
+    
+    ## SEE WHAT IS GOING ON WITH THE ANALYSIS ## 03-04
+
+    df_extremes = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) > 0)]
+    
+    df_normal = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) == 0)]
+    ## Create two groups one with the extreme events and one with the normal and compare the populations. 
+    
+    merged_data = pd.merge(df_extremes, grouped_pairs, left_on='Station', right_on='obs_file', how='inner')
+    ### Check if the climate during nesting is affectiing the population more than after the period of nesting.
+    
+    # CONTINUE ANALYSIS
