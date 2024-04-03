@@ -10,9 +10,19 @@ def load_and_clean_climate_data(file_path, config):
                 break
     
     # Reading the file based on the dynamically determined number of rows to skip
-    df = pd.read_csv(file_path, skiprows=num_skip_rows - 1, delimiter=config['delimiter'], engine='python')        
-    df['Date'] = pd.to_datetime(df['Datum'] + ' ' + df['Tid (UTC)'], format='%Y-%m-%d %H:%M:%S') 
-    df.drop(columns=['Datum', 'Tid (UTC)'], inplace=True)
+    df = pd.read_csv(file_path, skiprows=num_skip_rows - 1, delimiter=config['delimiter'], engine='python')
+    
+
+    # Check if 'Datum' and 'Tid (UTC)' columns exist
+    if 'Datum' in df.columns and 'Tid (UTC)' in df.columns:
+        # Merge 'Datum' and 'Tid (UTC)' columns into a new 'Date' column
+        df['Date'] = pd.to_datetime(df['Datum'] + ' ' + df['Tid (UTC)'], format='%Y-%m-%d %H:%M:%S')
+        # Drop the original 'Datum' and 'Tid (UTC)' columns
+        df.drop(columns=['Datum', 'Tid (UTC)'], inplace=True)
+    elif 'Datum Tid (UTC)' in df.columns:
+        # Rename the column 'Datum Tid (UTC)' to 'Date'
+        df.rename(columns={'Datum Tid (UTC)': 'Date'}, inplace=True)
+
     
     # Make Date first column again
     df = df[['Date'] + [col for col in df.columns if col != 'Date']]
