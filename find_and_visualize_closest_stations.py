@@ -10,7 +10,6 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
         if filename.endswith(".csv"):
             file_path = os.path.join(folder_path, filename)
 
-            
             # Extract latitude and longitude values from the cell below and next to it
             latitude, longitude = find_observation_coords(file_path)
             file_info[filename] = {'latitude': latitude, 'longitude': longitude}
@@ -58,6 +57,12 @@ def match_bird_and_observation_data(bird_data, folder_path, distance_limit=30):
 
     # Create a DataFrame from the list of dictionaries
     result_df = pd.DataFrame(pairs)
+    
+    # Group the pairs as very records are from the same area. So basically add all the populations of specific bird locations
+    result_df.eventDate = pd.to_datetime(result_df.eventDate)
+    result_df['year'] = result_df['eventDate'].dt.year
+    result_df['month'] = result_df['eventDate'].dt.month
+    result_df = result_df.groupby(by=['obs_file','obs_lat', 'obs_lon', 'bird_lat', 'bird_lon', 'lifeStage', 'year', 'month'])['individualCount'].sum().reset_index()
 
     return result_df
 
