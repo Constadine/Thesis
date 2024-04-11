@@ -2,6 +2,7 @@ import os
 import shutil
 import pandas as pd
 
+
 def load_climate_data(file_path, config, oldest_data_to_keep=2015):
     # Read the first few lines of the file to determine the number of rows to skip
     num_skip_rows = 0
@@ -23,9 +24,6 @@ def load_climate_data(file_path, config, oldest_data_to_keep=2015):
     elif 'Datum Tid (UTC)' in df.columns:
         # Rename the column 'Datum Tid (UTC)' to 'Date'
         df.rename(columns={'Datum Tid (UTC)': 'Date'}, inplace=True)
-
-
-    
     
  # Filter the DataFrame to include only rows where the year in the 'Date' column is greater than or equal to oldest_data_to_keep
     df['Date'] = pd.to_datetime(df['Date'])  # Ensure 'Date' column is in datetime format
@@ -72,7 +70,6 @@ def discard_files_with_old_data(folder_path, config, oldest_data_to_keep=2015):
             else:
                 print(f'Max year {df[date_column].dt.year.max()} - OK')
 
-
 def find_observation_coords(file_path):
     
     # Initialize a flag to indicate whether the target cell is found
@@ -111,14 +108,17 @@ def find_observation_coords(file_path):
             
     return latitude, longitude
 
-from climate_configs import configs
 
-data_folder = 'data/SMHI/'
-for main_folder in os.listdir(data_folder):
-    for folder in os.listdir(data_folder+main_folder):
-        variable_folder = os.path.join(data_folder+main_folder+'/'+folder)
-        print(variable_folder)
-        config = configs[folder]
+if __name__ == '__main__':
     
-        discard_files_with_old_data(variable_folder, config)
+    from climate_configs import configs
     
+    data_folder = 'data/SMHI/'
+    for main_folder in os.listdir(data_folder):
+        for folder in os.listdir(data_folder+main_folder):
+            variable_folder = os.path.join(data_folder+main_folder+'/'+folder)
+            print(variable_folder)
+            config = configs[folder]
+        
+            discard_files_with_old_data(variable_folder, config)
+        

@@ -11,6 +11,9 @@ configs = {
         'column_names': ['Date', 'Temperature'],
         'date_column': 'Date',
         'value_column': 'Temperature',
+        'distance_limit': 20,
+        'n_hours_for_mean_conc_diff:': 3,
+        'value_threshold_for_conc_diff': 5,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Air Temperature',
@@ -31,6 +34,9 @@ configs = {
         'column_names': ['Date', 'Air Pressure'],
         'date_column': 'Date',
         'value_column': 'Air Pressure',
+        'distance_limit': 20,
+        'n_hours_for_mean_conc_diff': 12,
+        'value_threshold_for_conc_diff': 40,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Air Pressure',
@@ -51,6 +57,9 @@ configs = {
         'column_names': ['Date', 'Sea Temperature'],
         'date_column': 'Date',
         'value_column': 'Sea Temperature',
+        'distance_limit': 10,
+        'n_hours_for_mean_conc_diff': 12,
+        'value_threshold_for_conc_diff': 5,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Sea Temperature',
@@ -71,6 +80,9 @@ configs = {
         'column_names': ['Date', 'Sea water level'],
         'date_column': 'Date',
         'value_column': 'Sea water level',
+        'distance_limit': 30,
+        'n_hours_for_mean_conc_diff': 2,
+        'value_threshold_for_conc_diff': 0.5,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Sea Water Level',
@@ -91,6 +103,9 @@ configs = {
         'column_names': ['Date', 'Wave Height'],
         'date_column': 'Date',
         'value_column': 'Wave Height',
+        'distance_limit': 10,
+        'n_hours_for_mean_conc_diff': 2,
+        'value_threshold_for_conc_diff': 1,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Wave Height',
@@ -111,6 +126,9 @@ configs = {
         'column_names': ['Date', 'Wind Speed'],
         'date_column': 'Date',
         'value_column': 'Wind Speed',
+        'distance_limit': 10,
+        'n_hours_for_mean_conc_diff': 2,
+        'value_threshold_for_conc_diff': 20,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Wind Speed',

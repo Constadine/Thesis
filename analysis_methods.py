@@ -53,5 +53,3 @@ def calculate_concecutive_differences(df, n_values, climate_variable_column, dif
     differences_above_threshold = pd.DataFrame(differences_above_threshold)
     
     return differences_above_threshold
-
-

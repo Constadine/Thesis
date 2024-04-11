@@ -17,13 +17,13 @@ if __name__ == '__main__':
     CLIMATE_FOLDER = "oceanografi"
     
     ### CLIMATE_VARIABLE_OPTIONS = "wind", "air_temperature", "air_pressure", "sea_temp", "seawater_level", "wave_height"
-    CLIMATE_VARIABLE = "sea_temp"
+    CLIMATE_VARIABLE = "wave_height"
     folder_path = os.path.join('data', 'SMHI', CLIMATE_FOLDER, CLIMATE_VARIABLE)
     
     config = configs[CLIMATE_VARIABLE]
     
     # Match observation stations with bird observations
-    distance_limit = 10 # Depending on climate variable chosen, distance limit should be adjusted. Measured in km.
+    distance_limit = 30 # Depending on climate variable chosen, distance limit should be adjusted. Measured in km.
     
     # Link bird observation locations with closest climate observation station
     pairs = match_bird_and_observation_data(bird_data, folder_path, distance_limit)
@@ -58,10 +58,15 @@ if __name__ == '__main__':
                     yearly_max = df_nesting_window.groupby(df_nesting_window[date_column].dt.year)[climate_variable_column].max()
         
                     # Specify the number of hours for the average
-                    n_hours = 2  # You can adjust this based on your requirements
+                    n_hours = config['n_hours_for_mean_conc_diff']  # You can adjust this based on your requirements
                     
-                    # Calculate the maximum difference
-                    difference_threshold = 0.5
+                    # Calculate the maximum concecutive differences
+                    if CLIMATE_VARIABLE == 'air_pressure':
+                        # In the case of air pressure I need to calculate std t0 account for the specific characteristics and variability of air pressure in each location.
+                        difference_threshold = df_nesting_window[climate_variable_column].std()
+                    else:
+                        difference_threshold = config['value_threshold_for_conc_diff']
+                        
                     max_difference_df = calculate_concecutive_differences(df_nesting_window, n_hours, climate_variable_column, difference_threshold)
                     
                     ## MAKE IT A FUNCTION DUDE ## 03-04
@@ -91,7 +96,10 @@ if __name__ == '__main__':
 
     ##### CONTINUE HERE #####
     
-    ## SEE WHAT IS GOING ON WITH THE ANALYSIS ## 03-04
+    ## SEE WHAT IS GOING ON WITH THE ANALYSIS ## 11-04
+    
+    # Changed the nhours and diff threshold to be taken by config. Implement analysis for all the variables nexT!!
+    
     ## Create two groups one with the extreme events and one with the normal and compare the populations. 
     ### Check if the climate during nesting is affectiing the population more than after the period of nesting.
 
@@ -99,5 +107,7 @@ if __name__ == '__main__':
     
     df_normal = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) == 0)]
     
-    merged_data = pd.merge(df_extremes, pairs, left_on='Station', right_on='obs_file', how='inner')
+    merged_data_extremes = pd.merge(df_extremes, pairs, left_on='Station', right_on='obs_file', how='inner')
+    merged_data_normals = pd.merge(df_normal, pairs, left_on='Station', right_on='obs_file', how='inner')
+    
     
