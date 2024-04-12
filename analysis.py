@@ -9,7 +9,7 @@ from find_and_visualize_closest_stations import match_bird_and_observation_data
 if __name__ == '__main__':
     
     # Load bird data
-    bird_filename = 'data/all_bird_data/all_birds_cleaned.csv'
+    bird_filename =  os.path.join('data', 'all_bird_data', 'all_birds_cleaned.csv')
     bird_data = load_bird_data(bird_filename)
 
     # Choose folder to load climate data
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     config = configs[CLIMATE_VARIABLE]
     
     # Match observation stations with bird observations
-    distance_limit = 30 # Depending on climate variable chosen, distance limit should be adjusted. Measured in km.
+    distance_limit = config['distance_limit'] # Depending on climate variable chosen, distance limit should be adjusted. Measured in km.
     
     # Link bird observation locations with closest climate observation station
     pairs = match_bird_and_observation_data(bird_data, folder_path, distance_limit)

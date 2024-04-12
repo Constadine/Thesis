@@ -12,7 +12,7 @@ configs = {
         'date_column': 'Date',
         'value_column': 'Temperature',
         'distance_limit': 20,
-        'n_hours_for_mean_conc_diff:': 3,
+        'n_hours_for_mean_conc_diff': 3,
         'value_threshold_for_conc_diff': 5,
         'metrics': {
             'mean': {
