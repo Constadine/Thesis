@@ -82,7 +82,7 @@ configs = {
         'value_column': 'Sea water level',
         'distance_limit': 30,
         'n_hours_for_mean_conc_diff': 2,
-        'value_threshold_for_conc_diff': 0.5,
+        'value_threshold_for_conc_diff': 14,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Sea Water Level',
@@ -128,7 +128,7 @@ configs = {
         'value_column': 'Wind Speed',
         'distance_limit': 10,
         'n_hours_for_mean_conc_diff': 2,
-        'value_threshold_for_conc_diff': 20,
+        'value_threshold_for_conc_diff': 300,
         'metrics': {
             'mean': {
                 'monthly_metric_name': 'Monthly Mean Wind Speed',
