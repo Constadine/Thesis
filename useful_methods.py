@@ -42,13 +42,6 @@ def load_climate_data(file_path, config, oldest_data_to_keep=2015):
 
     return df
 
-def get_station_name(file_path):
-    # Extract station name from cell A2 of the CSV file
-    with open(file_path, 'r') as file:
-        for line_num, line in enumerate(file):
-            if line_num == 1:  # Cell A2 corresponds to the second line (line_num starts from 0)
-                return line.strip()
-
 def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
     combined_df = pd.DataFrame()
 
@@ -58,14 +51,14 @@ def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
             # Construct the full file path for the CSV file
             file_path = os.path.join(folder_path, filename)
             
-            # Get the station name
-            station_name = get_station_name(file_path)
-            
+
             # Load the climate data
             climate_data = load_climate_data(file_path, config, oldest_data_to_keep)
             
+            coords = find_observation_coords(file_path)
+            
             # Rename the climate data column to the station name
-            climate_data.columns = ['Date', station_name]
+            climate_data.columns = ['Date', coords]
             
             # Merge the data into the combined DataFrame
             if combined_df.empty:
