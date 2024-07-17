@@ -1,7 +1,7 @@
 import os
 import shutil
 import pandas as pd
-
+from openpyxl import load_workbook
 
 def load_climate_data(file_path, config, oldest_data_to_keep=2015):
     # Read the first few lines of the file to determine the number of rows to skip
@@ -41,6 +41,43 @@ def load_climate_data(file_path, config, oldest_data_to_keep=2015):
     
 
     return df
+
+def get_station_name(file_path):
+    # Extract station name from cell A2 of the CSV file
+    with open(file_path, 'r') as file:
+        for line_num, line in enumerate(file):
+            if line_num == 1:  # Cell A2 corresponds to the second line (line_num starts from 0)
+                return line.strip()
+
+def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
+    combined_df = pd.DataFrame()
+
+    # Iterate over all files in the folder
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".csv"):
+            # Construct the full file path for the CSV file
+            file_path = os.path.join(folder_path, filename)
+            
+            # Get the station name
+            station_name = get_station_name(file_path)
+            
+            # Load the climate data
+            climate_data = load_climate_data(file_path, config, oldest_data_to_keep)
+            
+            # Rename the climate data column to the station name
+            climate_data.columns = ['Date', station_name]
+            
+            # Merge the data into the combined DataFrame
+            if combined_df.empty:
+                combined_df = climate_data
+            else:
+                combined_df = pd.merge(combined_df, climate_data, on='Date', how='outer')
+    
+    # Ensure the Date column is the first column
+    combined_df = combined_df[['Date'] + [col for col in combined_df.columns if col != 'Date']]
+    
+    return combined_df
+
 
 def load_bird_data(file_path):
     bird_data = pd.read_csv(file_path)

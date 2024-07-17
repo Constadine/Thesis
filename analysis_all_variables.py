@@ -51,13 +51,13 @@ for climate_folder, climate_variables in climate_folders.items():
         
                     file_path = os.path.join(folder_path, filename)
                 
-                    df = load_climate_data(file_path, config, 2015)
+                    df = load_climate_data(file_path, config, 2017)
                     
                     climate_variable_column = config['value_column']
                     date_column = config['date_column']
         
                     # Filter data for period of interest
-                    df_nesting_window = df[(df[date_column].dt.month.isin([4,5,6]))]
+                    df_nesting_window = df[(df[date_column].dt.month.isin([5,6]))]
                     df_nesting_window.reset_index(drop=True, inplace=True)
     
                     if not df_nesting_window.empty:
@@ -106,63 +106,92 @@ for climate_folder, climate_variables in climate_folders.items():
         # Concatenate all DataFrames in the list into a single DataFrame
         result_df = pd.concat(result_list, ignore_index=True)
         
-        # Store extreme and normal data for the current climate variable
-        extreme_data_dict[climate_variable] = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) > 0)]
-        normal_data_dict[climate_variable] = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) == 0)]
         
+        #### OLD WAY ####
+        
+        # Store extreme and normal data for the current climate variable
+        # extreme_data_dict[climate_variable] = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) > 0)]
+        # normal_data_dict[climate_variable] = result_df[result_df['Above Threshold Values'].apply(lambda x: len(x) == 0)]
+        
+        
+        #### OLD WAY ####
+        
+        ## NEW WAY ##
+        #Step 1: Sum Population for Each Station and Year
+        # population_sum = pairs_dict[climate_variable].groupby(['obs_file', 'year'])['individualCount'].sum().reset_index()
+        
+        # # Step 2: Determine Extreme or Normal Event for Each Year
+        # # Determine if a year is "Extreme" or "Normal" based on the presence of records in "Above Threshold Values"
+        # population_sum['Event_Type'] = 'Normal'  # Initialize all as Normal
+        # # Find years corresponding to extreme events
+        # extreme_years_for
+        # # Mark those years as Extreme
+        # population_sum.loc[population_sum['year'].isin(extreme_years), 'Event_Type'] = 'Extreme'
+        
+        # # Step 3: Add Event_Type Column to Pairs DataFrame
+        # # Merge population_sum DataFrame with pairs DataFrame based on station and year
+        # pairs_dict[climate_variable] = pd.merge(pairs_dict[climate_variable], population_sum[['obs_file', 'year', 'Event_Type']], on=['obs_file', 'year'], how='left')
+        
+                
+        ## NEW WAY ## 
          # Initialize a list to store the merged extreme events
-        merged_extremes_list = []
+        # merged_extremes_list = []
  
     
  
  ### TO FIX. Now I don't merge the extremes and pairs right. I need to somehow
-# get the unique bird locations and then the year of interest.    
+ # get the unique bird locations and then the year of interest.
  
+ 
+ ### ----------------- MAY DITCH IF NEW WAY IS BETTER 
+ 
+# Iterate over each row in the extreme events DataFrame
+# for index, row in extreme_data_dict[climate_variable].iterrows():
+#     # Extract the station from the extreme event
+#     station = row['Station']
     
+#     # Filter the pairs DataFrame to include only records for the same station
+#     station_pairs = pairs_dict[climate_variable][pairs_dict[climate_variable]['obs_file'] == station]
+    
+#     # Merge the extreme event with the pairs DataFrame based on unique bird coordinates
+#     merged_extreme = pd.merge(pd.DataFrame(row).T, station_pairs[['bird_lat', 'bird_lon']].drop_duplicates(), how='inner')
  
-        # Iterate over each row in the extreme events DataFrame
-        for index, row in extreme_data_dict[climate_variable].iterrows():
-            # Extract the station from the extreme event
-            station = row['Station']
-            
-            # Filter the pairs DataFrame to include only records for the same station
-            station_pairs = pairs_dict[climate_variable][pairs_dict[climate_variable]['obs_file'] == station]
-            
-            # Merge the extreme event with the pairs DataFrame based on unique bird coordinates
-            merged_extreme = pd.merge(pd.DataFrame(row).T, station_pairs[['bird_lat', 'bird_lon']].drop_duplicates(), how='inner')
+#     # Filter the merged DataFrame to only include the years where extreme events have occurred
+#     merged_extreme_years = merged_extreme[merged_extreme['Year'].isin(row['Year'])]
+    
+#     # Append the filtered merged DataFrame to the list
+#     merged_extremes_list.append(merged_extreme_years)
  
-            # Filter the merged DataFrame to only include the years where extreme events have occurred
-            merged_extreme_years = merged_extreme[merged_extreme['Year'].isin(row['Year'])]
-            
-            # Append the filtered merged DataFrame to the list
-            merged_extremes_list.append(merged_extreme_years)
+# # Concatenate all merged extreme events into a single DataFrame
+# merged_extremes = pd.concat(merged_extremes_list)
+
+# # Initialize a list to store the merged normal events
+# merged_normals_list = []
  
-        # Concatenate all merged extreme events into a single DataFrame
-        merged_extremes = pd.concat(merged_extremes_list)
-        
-        # Initialize a list to store the merged normal events
-        merged_normals_list = []
+
+# # Iterate over each row in the normal events DataFrame
+# for index, row in normal_data_dict[climate_variable].iterrows():
+#     # Extract the station from the normal event
+#     station = row['Station']
+    
+#     # Filter the pairs DataFrame to include only records for the same station
+#     station_pairs = pairs_dict[climate_variable][pairs_dict[climate_variable]['obs_file'] == station]
+    
+#     # Merge the normal event with the pairs DataFrame based on unique bird coordinates
+#     merged_normal = pd.merge(pd.DataFrame(row).T, station_pairs[['bird_lat', 'bird_lon']].drop_duplicates(), how='inner')
  
-        # Iterate over each row in the normal events DataFrame
-        for index, row in normal_data_dict[climate_variable].iterrows():
-            # Extract the station from the normal event
-            station = row['Station']
-            
-            # Filter the pairs DataFrame to include only records for the same station
-            station_pairs = pairs_dict[climate_variable][pairs_dict[climate_variable]['obs_file'] == station]
-            
-            # Merge the normal event with the pairs DataFrame based on unique bird coordinates
-            merged_normal = pd.merge(pd.DataFrame(row).T, station_pairs[['bird_lat', 'bird_lon']].drop_duplicates(), how='inner')
+#     # Filter the merged DataFrame to only include the years where normal events have occurred
+#     merged_normal_years = merged_normal[merged_normal['Year'].isin(row['Year'])]
+    
+#     # Append the filtered merged DataFrame to the list
+#     merged_normals_list.append(merged_normal_years)
  
-            # Filter the merged DataFrame to only include the years where normal events have occurred
-            merged_normal_years = merged_normal[merged_normal['Year'].isin(row['Year'])]
-            
-            # Append the filtered merged DataFrame to the list
-            merged_normals_list.append(merged_normal_years)
- 
-        # Concatenate all merged normal events into a single DataFrame
-        merged_normals = pd.concat(merged_normals_list)
-        
+# # Concatenate all merged normal events into a single DataFrame
+# merged_normals = pd.concat(merged_normals_list)
+   
+ ### ----------------- MAY DITCH IF NEW WAY IS BETTER 
+
+
 # Get the end time
 end_time = time.time()
 
