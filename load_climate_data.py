@@ -119,7 +119,6 @@ from climate_configs import configs
 #     return combined_df
 
 
-
 def extract_station_info(lines):
     """
     Extracts the station name and coordinates from the lines of the CSV file.
@@ -127,16 +126,22 @@ def extract_station_info(lines):
     latitude = None
     longitude = None
 
-    for i, line in enumerate(lines):
-        # Example logic to extract station name and coordinates
-        # Adjust this logic based on the actual structure of your CSV files
-
-        if "latitud" in line.lower():
-            latitude = line.split(";")[1].strip()
-        if "longitud" in line.lower():
-            longitude = line.split(";")[1].strip()
-
-    return latitude, longitude
+    for idx, line in enumerate(lines):
+        # Split the line by semicolons
+        columns = line.split(";")
+        
+        # Check if "Latitud" is in the current line
+        if any("latitud" in col.lower() for col in columns):
+            lat_index = columns.index(next(col for col in columns if "latitud" in col.lower()))
+            latitude = lines[idx + 1].split(";")[lat_index].strip()
+        
+        # Check if "Longitud" is in the current line
+        if any("longitud" in col.lower() for col in columns):
+            lon_index = columns.index(next(col for col in columns if "longitud" in col.lower()))
+            longitude = lines[idx + 1].split(";")[lon_index].strip()
+    
+        if latitude and longitude:
+            return latitude, longitude
 
 def load_climate_data(df, config, oldest_data_to_keep=2015):
     # Check if 'Datum' and 'Tid (UTC)' columns exist
@@ -164,7 +169,7 @@ def load_climate_data(df, config, oldest_data_to_keep=2015):
 
 def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
     combined_df = pd.DataFrame()
-
+    file_coords = {}  # Dictionary to store file names and their coordinates
     # Iterate over all files in the folder
     for filename in os.listdir(folder_path):
         if filename.endswith(".csv"):
@@ -172,18 +177,25 @@ def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
             file_path = os.path.join(folder_path, filename)
 
             # Read the file line-by-line to find the number of rows to skip and extract station info
+            lines = []
             with open(file_path, 'r') as file:
-                lines = file.readlines()
+                for i in range(15):
+                    line = file.readline()
+                    if not line:
+                        break  # Stop if we reach the end of the file before 15 lines
+                    lines.append(line)
             
+            latitude, longitude = extract_station_info(lines)
+            file_coords[filename] = (latitude, longitude)  # Store filename and its coordinates
+            
+            coords = f"{latitude}_{longitude}"
+            print(coords)
             num_skip_rows = 0
             for line in lines:
                 num_skip_rows += 1
                 if "Datum" in line:
                     break
             
-            # Extract station information from the lines
-            latitude, longitude = extract_station_info(lines)
-            coords = f"{latitude}_{longitude}"
 
             # Read the DataFrame based on the number of rows to skip
             df = pd.read_csv(file_path, skiprows=num_skip_rows - 1, delimiter=config['delimiter'], engine='python')
@@ -213,14 +225,30 @@ def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
     # Ensure the Date column is the first column
     combined_df = combined_df[['Date'] + [col for col in combined_df.columns if col != 'Date']]
 
-    return combined_df
-folder_path = '/home/kon/Education/UoG/Earth Science Master/Thesis/data/SMHI/meteorologi/air_pressure'
-config = configs['air_pressure']
-# Combine the climate data
-combined_climate_data = combine_climate_data(folder_path, config)
+    return combined_df, file_coords
 
-# Print the combined data (or save it to a file)
-print(combined_climate_data)
+if __name__ == '__main__':
+    root_folder='/home/kotikos/Education/UoG/Earth Science Master/Thesis/data/SMHI'
+    coords_dict = {}  # Dictionary to store filenames and their corresponding coordinates
+    for category_folder in os.listdir(root_folder):
+        category_path = os.path.join(root_folder, category_folder)
 
-# Optionally, save to a CSV file
-combined_climate_data.to_csv('combined_climate_data.csv', index=False)
+        # Ensure we are only processing directories
+        if os.path.isdir(category_path):
+            # Iterate over the variable folders within each category (e.g., air_pressure, sea_temp, etc.)
+            for variable_folder in os.listdir(category_path):
+                variable_path = os.path.join(category_path, variable_folder)
+
+                if os.path.isdir(variable_path):
+                    print(f"Processing: {variable_path}")
+                    config = configs.get(variable_folder, {})  # Fetch the config for the variable
+                    combined_climate_data, file_coords = combine_climate_data(variable_path, config)
+                    # Save the combined data to a CSV file named after the variable
+                    output_filename = f'{variable_folder}_combined_data.csv'
+                    coords_dict_filename = f'{variable_folder}_coords.csv'
+                    output_filepath = os.path.join(root_folder, output_filename)
+                    combined_climate_data.to_csv(output_filepath, index=False)
+                    
+                    pd.DataFrame.from_dict(file_coords, orient='index', columns=['Latitude', 'Longitude']).to_csv(coords_dict_filename)
+                    print(f"Saved: {output_filepath} and {coords_dict_filename}")
+    
