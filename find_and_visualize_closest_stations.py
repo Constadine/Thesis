@@ -140,6 +140,6 @@ if __name__ == '__main__':
     pairs = match_bird_and_observation_data(grouped_bird_data, folder_path, DISTANCE_LIMIT)
     
     # Visualize
-    output_name = f'all_nestlings_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
-    create_paired_stations_map(pairs, output_name)
+    # output_name = f'all_nestlings_paired_stations_map_{CLIMATE_VARIABLE}_{DISTANCE_LIMIT}km.html'
+    # create_paired_stations_map(pairs, output_name)
 
