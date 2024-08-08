@@ -1,4 +1,7 @@
+# This module is intended to prepare the bird data for the pairing procedure with 'pair.py'
+
 import polars as pl
+
 
 # Load the bird dataset
 bird_data = pl.read_csv('data/all_bird_data/all_birds_cleaned.csv')
