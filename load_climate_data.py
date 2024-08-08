@@ -2,6 +2,14 @@ import pandas as pd
 import os
 from climate_configs import configs
 
+"""
+With this script I create the combined dataframes for every climate variable in the folder SMHI 
+and the child folders. The resulting dataframes contain the date and the data of each station
+in every column. The name of the column is the coordinates of the station in the form of lat_lon
+to easily be used by pair.py. The SMHI folder should be structured as followed:
+    
+"""
+
 def extract_station_info(lines):
     """
     Extracts the station name and coordinates from the lines of the CSV file.
@@ -26,7 +34,7 @@ def extract_station_info(lines):
         if latitude and longitude:
             return latitude, longitude
 
-def load_climate_data(df, config, oldest_data_to_keep=2015):
+def clean_climate_data(df, config, oldest_data_to_keep=2015):
     # Check if 'Datum' and 'Tid (UTC)' columns exist
     if 'Datum' in df.columns and 'Tid (UTC)' in df.columns:
         # Merge 'Datum' and 'Tid (UTC)' columns into a new 'Date' column
@@ -79,12 +87,11 @@ def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
                 if "Datum" in line:
                     break
             
-
             # Read the DataFrame based on the number of rows to skip
             df = pd.read_csv(file_path, skiprows=num_skip_rows - 1, delimiter=config['delimiter'], engine='python')
             
             # Load and process the climate data
-            climate_data = load_climate_data(df, config, oldest_data_to_keep)
+            climate_data = clean_climate_data(df, config, oldest_data_to_keep)
             
             # Rename the climate data column to the station coordinates
             climate_data.columns = ['Date', coords]
@@ -96,7 +103,7 @@ def combine_climate_data(folder_path, config, oldest_data_to_keep=2015):
             duplicate_columns = combined_df_columns.intersection(climate_data_columns)
             for col in duplicate_columns:
                 if col != 'Date':
-                    new_col_name = col + f"_{filename.split('.')[0]}"
+                    new_col_name = col
                     climate_data.rename(columns={col: new_col_name}, inplace=True)
 
             # Merge the data into the combined DataFrame
@@ -129,11 +136,14 @@ if __name__ == '__main__':
                     config = configs.get(variable_folder, {})  # Fetch the config for the variable
                     combined_climate_data, file_coords = combine_climate_data(variable_path, config)
                     # Save the combined data to a CSV file named after the variable
-                    output_filename = f'{variable_folder}_combined_data.csv'
-                    coords_dict_filename = f'{variable_folder}_coords.csv'
-                    output_filepath = os.path.join(root_folder, output_filename)
-                    combined_climate_data.to_csv(output_filepath, index=False)
+                    climate_data_output_filename = f'{variable_folder}.csv'
+                    climate_data_output_filepath = os.path.join(root_folder, climate_data_output_filename)
                     
-                    pd.DataFrame.from_dict(file_coords, orient='index', columns=['Latitude', 'Longitude']).to_csv(coords_dict_filename)
-                    print(f"Saved: {output_filepath} and {coords_dict_filename}")
+                    coords_filename = f'{variable_folder}_coords.csv'
+                    coords_output_filepath = os.path.join(root_folder, coords_filename)
+                    
+                    combined_climate_data.to_csv(climate_data_output_filepath, index=False)
+                    
+                    pd.DataFrame.from_dict(file_coords, orient='index', columns=['Latitude', 'Longitude']).to_csv(coords_filename)
+                    print(f"Saved: {climate_data_output_filepath} and {coords_output_filepath}")
     
