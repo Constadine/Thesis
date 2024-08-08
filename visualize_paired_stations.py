@@ -1,5 +1,6 @@
 import folium
 import polars as pl
+import os
 
 def parse_nearest_station(nearest_station):
     # Split by underscore to extract lat and lon
@@ -41,10 +42,19 @@ def visualize_bird_stations(bird_data, map_filename='bird_stations_map.html'):
     bird_map.save(map_filename)
     print(f"Map has been saved as {map_filename}")
 
-# Example usage:
 
-# Load your data as a Polars DataFrame
-bird_data = pl.read_csv('filtered_bird_data.csv')
-
-# Visualize the bird locations and their nearest stations
-visualize_bird_stations(bird_data)
+if __name__ == '__main__':
+    ## ...:::Choose climate variable:::...
+    '''
+    OPTIONS = 'air_pressure' | 'air_temperature' | 'seawater_level' | 'sea_temp' | 'wave_height' | 'wind'
+    '''
+    climate_variable = 'wind'
+    
+    rootfile = '/home/kotikos/Education/UoG/Earth Science Master/Thesis/paired_datasets'
+    filename = f'paired_birds_with_{climate_variable}.csv'
+    # Load your data as a Polars DataFrame
+    file_path = os.path.join(rootfile, filename)
+    bird_data = pl.read_csv(file_path)
+    
+    # Visualize the bird locations and their nearest stations
+    visualize_bird_stations(bird_data, f'paired_bird_{climate_variable}_stations_map.html')
