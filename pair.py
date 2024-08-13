@@ -34,7 +34,7 @@ bird_data = pl.read_csv("data/all_bird_data/bird_data.csv")
 # Load the climate variable data
 climate_data = pl.read_csv(f"data/SMHI/{climate_variable}.csv")
 
-## ..::Clean bird data::.. 
+## ..::Prepare bird and climate data::.. 
 
 # Strip the time part and keep only the date
 bird_data = bird_data.with_columns([
