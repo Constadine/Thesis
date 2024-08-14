@@ -6,15 +6,15 @@ start_time = time.time()
 OPTIONS = 'air_pressure' | 'air_temperature' | 'seawater_level' | 'sea_temp' | 'wave_height' | 'wind'
 '''
 
-OPTIONS = ['air_pressure', 'air_temperature', 'seawater_level', 'sea_temp', 'wave_height', 'wind']
+CLIMATE_VARIABLES = ['air_pressure', 'air_temperature', 'seawater_level', 'sea_temp', 'wave_height', 'wind']
 
 # Initialize a dictionary to store the correlation results for each option
 all_correlation_results = {}
 
-for option in OPTIONS:
+for variable in CLIMATE_VARIABLES:
     
-    bird_path = f'data/paired_datasets/paired_birds_with_{option}.csv'
-    climate_path = f'data/SMHI/{option}.csv'
+    bird_path = f'data/paired_datasets/paired_birds_with_{variable}.csv'
+    climate_path = f'data/SMHI/{variable}.csv'
 
     # Load the datasets
     bird_data = pl.read_csv(bird_path)
@@ -28,6 +28,8 @@ for option in OPTIONS:
     climate_data = climate_data.with_columns(
         pl.col('Date').str.strptime(pl.Datetime, format='%Y-%m-%d %H:%M:%S').alias('Date')
     )
+    
+    # KNN 
     
     # Choose an appropriate strategy:
     # 1. Forward Fill
@@ -70,10 +72,10 @@ for option in OPTIONS:
                 right_on='Year',
                 how='inner'
             )
-            merged_data = merged_data.rename({station_col: option})
+            merged_data = merged_data.rename({station_col: variable})
             
             # Calculate the correlation
-            correlation = merged_data.select(pl.corr('total_population', option)).to_numpy()[0, 0]
+            correlation = merged_data.select(pl.corr('total_population', variable)).to_numpy()[0, 0]
             
             # Store the result
             correlation_results.append({
@@ -87,11 +89,11 @@ for option in OPTIONS:
     # Remove NaN values from the correlation results
     correlation_results_df = correlation_results_df.filter(~pl.col('correlation').is_nan())
 
-    all_correlation_results[option] = correlation_results_df
+    all_correlation_results[variable] = correlation_results_df
     
 # Display the summary of the results for each option
 for option, df in all_correlation_results.items():
-    print(f"Summary of correlation results for {option}:")
+    print(f"Summary of correlation results for {variable}:")
     description = df['correlation'].describe()
     print(description)
     print("\n")
