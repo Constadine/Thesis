@@ -1,70 +1,83 @@
-import polars as pl
-import numpy as np
+import pandas as pd
+import os
 
-def calculate_yearly_average(climate_data, station_col):
-    # Convert Date to Year and ensure it's the same dtype across dataframes
+
+# Define the path to the climate data folder
+climate_data_folder = '/home/kotikos/Education/UoG/Earth Science Master/Thesis/data/SMHI'
+
+# Load the bird data CSV file
+bird_data_path = '/home/kotikos/Education/UoG/Earth Science Master/Thesis/paired_birds_all_climate_data.csv'
+bird_data = pd.read_csv(bird_data_path)
+
+# Step 1: Extract year from the Date column in bird data
+bird_data['Year'] = pd.to_datetime(bird_data['Date']).dt.year
+
+# Initialize a list to hold results for merging later
+bird_data_list = []
+
+# Get the list of climate variables and corresponding CSV file names
+climate_variables = ['air_pressure', 'air_temperature', 'seawater_level', 
+                     'sea_temp', 'wave_height', 'wind']
+climate_files = [f'{var}.csv' for var in climate_variables]
+
+# Iterate over each climate variable to calculate yearly means for the closest stations
+for variable, file_name in zip(climate_variables, climate_files):
+    station_column = f'{variable}_nearest_station'
     
-    climate_data = climate_data.with_columns(
-        pl.col('Date').str.strptime(pl.Date, '%Y-%m-%d %H:%M:%S')
-    )
-    climate_data = climate_data.with_columns(
-        pl.col('Date').dt.year().cast(pl.Int64).alias('Year')
-    )
-
-    # Calculate yearly average for the specified station column
-    yearly_avg_df = climate_data.group_by('Year').agg(
-        pl.col(station_col).mean().alias(f'{station_col}_yearly_avg')
-    )
-
-    return yearly_avg_df
-
-def integrate_climate_data(bird_data, climate_variable, climate_data):
-    # Ensure date format is correct and extract year
-    bird_data = bird_data.with_columns(
-        pl.col('Date').str.strptime(pl.Date, '%Y-%m-%d')
-    ).with_columns(
-        pl.col('Date').dt.year().cast(pl.Int64).alias('Year')
-    )
+    # Load the corresponding climate data file
+    climate_data_path = os.path.join(climate_data_folder, file_name)
+    climate_data = pd.read_csv(climate_data_path)
     
-    # Use the nearest_station column for the current climate variable
-    nearest_station_col = f'{climate_variable}_nearest_station'
-    
-    # Initialize an empty list to collect results
-    results = []
-
-    # Iterate through each row in the bird data
-    for row in bird_data.iter_rows(named=True):
-        station_col = row[nearest_station_col]
-        row_df = pl.DataFrame(row)
-
-        if station_col in climate_data.columns:
-            yearly_avg_df = calculate_yearly_average(climate_data, station_col)
-            # Cast the Year column to Int64 to match data types
-            yearly_avg_df = yearly_avg_df.with_columns(pl.col('Year').cast(pl.Int64))
-            # Join the yearly average data with the bird data
-            row_df = row_df.join(yearly_avg_df, on='Year', how='left')
-        else:
-            # Add a column with Null values to maintain structure
-            row_df = row_df.with_columns(pl.Series(name=f'{station_col}_yearly_avg', values=[None], dtype=pl.Float64))
+    if station_column in bird_data.columns:
+        # Identify valid stations that are present in the climate data
+        valid_stations = [station for station in bird_data[station_column].dropna().unique() if station in climate_data.columns]
         
-        # Ensure consistent data types across all rows
-        row_df = row_df.with_columns([pl.col(nearest_station_col).cast(pl.Utf8, strict=False)])
-        results.append(row_df)
-    
-    # Concatenate all results into a single DataFrame
-    bird_data = pl.concat(results, how='vertical')
+        if valid_stations:
+            # Filter climate data for the valid stations
+            relevant_climate_data = climate_data[['Date'] + valid_stations]
+            relevant_climate_data['Year'] = pd.to_datetime(relevant_climate_data['Date']).dt.year
+            
+            # Ensure that the station data is numeric
+            relevant_climate_data[valid_stations] = relevant_climate_data[valid_stations].apply(pd.to_numeric, errors='coerce')
+            
+            # Calculate yearly mean for each station
+            yearly_mean = relevant_climate_data.groupby('Year').mean(numeric_only=True).reset_index()
+            
+            # Melt the yearly mean to have one station per row
+            yearly_mean_melted = yearly_mean.melt(id_vars='Year', 
+                                                  var_name=f'{variable}_station', 
+                                                  value_name=f'{variable}_values')
+            
+            # Merge the calculated yearly means with the bird data based on the station and year
+            bird_data_temp = bird_data.merge(yearly_mean_melted, 
+                                             left_on=['Year', station_column], 
+                                             right_on=['Year', f'{variable}_station'], 
+                                             how='left')
+            
+            # Fill missing values with -1
+            bird_data_temp[f'{variable}_values'] = bird_data_temp[f'{variable}_values'].fillna(-1)
+            
+            # Drop the extra station column after merging
+            bird_data_temp.drop(columns=[f'{variable}_station'], inplace=True)
+            
+            bird_data_list.append(bird_data_temp)
 
-    return bird_data
+# Combine all the merged data together
+final_bird_data = bird_data_list[0]
 
-# Example usage
-bird_data = pl.read_csv("paired_birds_all_climate_data.csv")
-climate_variables = ['air_pressure', 'air_temperature', 'seawater_level', 'sea_temp', 'wave_height', 'wind']
+for data in bird_data_list[1:]:
+    final_bird_data = final_bird_data.combine_first(data)
 
-# Integrate each climate variable into the bird data
-for climate_variable in climate_variables:
-    climate_data = pl.read_csv(f"data/SMHI/{climate_variable}.csv")
-    
-    bird_data = integrate_climate_data(bird_data, climate_variable, climate_data)
+# Step 4: Drop the columns related to the nearest station and distance
+columns_to_drop = [f'{variable}_nearest_station' for variable in climate_variables] + \
+                  [f'{variable}_nearest_distance' for variable in climate_variables]
+final_bird_data = final_bird_data.drop(columns=columns_to_drop)
 
-# Save the final integrated data
-bird_data.write_csv("final_paired_birds_all_climate_data.csv")
+# Define the new column order
+new_column_order = ['Year', 'lat', 'lon', 'total_population', 'air_pressure_values', 
+                    'air_temperature_values', 'wind_values', 'sea_temp_values', 
+                    'seawater_level_values', 'wave_height_values']
+
+# Reorder the columns and drop the 'Date' column
+final_bird_data = final_bird_data[new_column_order]
+final_bird_data.to_csv('data_for_correlation.csv', index=False)
