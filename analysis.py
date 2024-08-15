@@ -1,102 +1,54 @@
-import polars as pl
-import time
-# Measure the execution time
-start_time = time.time()
-'''
-OPTIONS = 'air_pressure' | 'air_temperature' | 'seawater_level' | 'sea_temp' | 'wave_height' | 'wind'
-'''
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+import os
 
-CLIMATE_VARIABLES = ['air_pressure', 'air_temperature', 'seawater_level', 'sea_temp', 'wave_height', 'wind']
+def heatmaps(correlation_path, save_dir='/home/kotikos/Education/UoG/Earth Science Master/Thesis/analysis/heatmaps'):
+    cor_data = pd.read_csv(correlation_path)
+    
+    # Replace -1 with NaN
+    filtered_data = cor_data.replace(-1, np.nan)
+    
+    # Select only the relevant columns for correlation
+    correlation_data = filtered_data[['total_population', 'air_pressure_values', 'air_temperature_values', 
+                                      'wind_values', 'sea_temp_values', 'seawater_level_values', 
+                                      'wave_height_values']]
+    
+    # Calculate the correlation matrix, automatically ignoring NaN values
+    pearsons_corr = correlation_data.corr()
+    
+    # Calculate Spearman correlation
+    spearman_corr = correlation_data.corr(method='spearman')
 
-# Initialize a dictionary to store the correlation results for each option
-all_correlation_results = {}
+    # Calculate Kendall Tau correlation
+    kendall_corr = correlation_data.corr(method='kendall')
 
-for variable in CLIMATE_VARIABLES:
-    
-    bird_path = f'data/paired_datasets/paired_birds_with_{variable}.csv'
-    climate_path = f'data/SMHI/{variable}.csv'
 
-    # Load the datasets
-    bird_data = pl.read_csv(bird_path)
-    climate_data = pl.read_csv(climate_path)
-    
-    # Ensure Date columns are correctly converted to datetime
-    bird_data = bird_data.with_columns(
-        pl.col('Date').str.strptime(pl.Datetime, format='%Y-%m-%d').alias('Date')
-    )
-    
-    climate_data = climate_data.with_columns(
-        pl.col('Date').str.strptime(pl.Datetime, format='%Y-%m-%d %H:%M:%S').alias('Date')
-    )
-    
-    # KNN 
-    
-    # Choose an appropriate strategy:
-    # 1. Forward Fill
-    # seawater_data = seawater_data.fill_null(strategy="forward")
-    
-    # 2. Interpolation (if necessary, using Pandas)
-    climate_data_pandas = climate_data.to_pandas()
-    climate_data_interpolated = climate_data_pandas.interpolate(method='linear')
-    climate_data = pl.from_pandas(climate_data_interpolated)
-    
-    # Extract the year from the Date column
-    bird_data = bird_data.with_columns(pl.col('Date').dt.year().alias('Year'))
-    climate_data = climate_data.with_columns(pl.col('Date').dt.year().alias('Year'))
-    
-    # Aggregate seawater level data by year and station (taking the mean)
-    climate_yearly = climate_data.group_by('Year').mean()
-    
+    # Plot the Pearsons
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(pearsons_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+    plt.title('Pearson Correlation Heatmap')
+    plt.savefig(os.path.join(save_dir,'pearson_correlation_heatmap.png'), dpi=300, bbox_inches='tight')
+    plt.show()
 
+    # Plot Spearman correlation heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(spearman_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+    plt.title('Spearman Correlation Heatmap')
+    plt.savefig(os.path.join(save_dir,'spearman_correlation_heatmap.png'), dpi=300, bbox_inches='tight')
+    plt.show()
     
-    # Initialize an empty list to store correlation results
-    correlation_results = []
+    # Plot Kendall Tau correlation heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(kendall_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+    plt.title('Kendall Tau Correlation Heatmap')
+    plt.savefig(os.path.join(save_dir,'kendall_correlation_heatmap.png'), dpi=300, bbox_inches='tight')
+    plt.show()
     
-    # Iterate over each unique bird location
-    unique_locations = bird_data.select(['lat', 'lon']).unique()
-    
-    for location in unique_locations.iter_rows(named=True):
-        # Filter the bird data for the specific location
-        filtered_bird_data = bird_data.filter(
-            (pl.col('lat') == location['lat']) & (pl.col('lon') == location['lon'])
-        )
-        
-        # Get the nearest station column
-        station_col = filtered_bird_data['nearest_station'][0]
-        
-        if station_col in climate_yearly.columns:
-            # Merge bird data with corresponding seawater level data
-            merged_data = filtered_bird_data.join(
-                climate_yearly.select(['Year', station_col]),
-                left_on='Year',
-                right_on='Year',
-                how='inner'
-            )
-            merged_data = merged_data.rename({station_col: variable})
-            
-            # Calculate the correlation
-            correlation = merged_data.select(pl.corr('total_population', variable)).to_numpy()[0, 0]
-            
-            # Store the result
-            correlation_results.append({
-                'lat': location['lat'],
-                'lon': location['lon'],
-                'correlation': correlation
-            })
-    
-    # Convert the results to a DataFrame and store in the dictionary
-    correlation_results_df = pl.DataFrame(correlation_results)
-    # Remove NaN values from the correlation results
-    correlation_results_df = correlation_results_df.filter(~pl.col('correlation').is_nan())
+    print(f'Maps were saved and moved to {save_dir}')
 
-    all_correlation_results[variable] = correlation_results_df
+if __name__=='__main__':
     
-# Display the summary of the results for each option
-for option, df in all_correlation_results.items():
-    print(f"Summary of correlation results for {variable}:")
-    description = df['correlation'].describe()
-    print(description)
-    print("\n")
-
-end_time = time.time()
-print(f"Script executed in {end_time - start_time} seconds")
+    cor_path = 'data_for_correlation.csv'
+    heatmaps(cor_path)
