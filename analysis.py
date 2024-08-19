@@ -3,9 +3,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import argparse
 
-def heatmaps(correlation_path, save_dir='/home/kotikos/Education/UoG/Earth Science Master/Thesis/analysis/heatmaps'):
-    cor_data = pd.read_csv(correlation_path)
+def heatmaps(data_file_path, name_suffix='', save_dir='/home/kotikos/Education/UoG/Earth Science Master/Thesis/results/heatmaps'):
+    print(f"Reading data from {data_file_path}...")
+    cor_data = pd.read_csv(data_file_path)
     
     # Replace -1 with NaN
     filtered_data = cor_data.replace(-1, np.nan)
@@ -15,40 +17,49 @@ def heatmaps(correlation_path, save_dir='/home/kotikos/Education/UoG/Earth Scien
                                       'wind_values', 'sea_temp_values', 'seawater_level_values', 
                                       'wave_height_values']]
     
-    # Calculate the correlation matrix, automatically ignoring NaN values
+    print("Calculating correlation matrices...")
+    # Calculate the correlation matrices
     pearsons_corr = correlation_data.corr()
-    
-    # Calculate Spearman correlation
     spearman_corr = correlation_data.corr(method='spearman')
-
-    # Calculate Kendall Tau correlation
     kendall_corr = correlation_data.corr(method='kendall')
 
-
-    # Plot the Pearsons
+    # Plot and save Pearson correlation heatmap
+    print("Generating Pearson correlation heatmap...")
     plt.figure(figsize=(10, 8))
     sns.heatmap(pearsons_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
     plt.title('Pearson Correlation Heatmap')
-    plt.savefig(os.path.join(save_dir,'pearson_correlation_heatmap.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'pearson_correlation_heatmap{f"_{name_suffix}"}.png'), dpi=300, bbox_inches='tight')
     plt.show()
 
-    # Plot Spearman correlation heatmap
+    # Plot and save Spearman correlation heatmap
+    print("Generating Spearman correlation heatmap...")
     plt.figure(figsize=(10, 8))
     sns.heatmap(spearman_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
     plt.title('Spearman Correlation Heatmap')
-    plt.savefig(os.path.join(save_dir,'spearman_correlation_heatmap.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'spearman_correlation_heatmap{f"_{name_suffix}"}.png'), dpi=300, bbox_inches='tight')
     plt.show()
     
-    # Plot Kendall Tau correlation heatmap
+    # Plot and save Kendall Tau correlation heatmap
+    print("Generating Kendall Tau correlation heatmap...")
     plt.figure(figsize=(10, 8))
     sns.heatmap(kendall_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
     plt.title('Kendall Tau Correlation Heatmap')
-    plt.savefig(os.path.join(save_dir,'kendall_correlation_heatmap.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'kendall_correlation_heatmap{f"_{name_suffix}"}.png'), dpi=300, bbox_inches='tight')
     plt.show()
     
-    print(f'Maps were saved and moved to {save_dir}')
+    print(f'Heatmaps were saved and moved to {save_dir}')
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Generate and save heatmaps for Pearson, Spearman, and Kendall Tau correlations.',
+        epilog='Example usage: python heatmap_script.py --data_path data/final_datasets/data_for_correlation_apr_jun.csv --suffix apr_jun'
+    )
+    parser.add_argument('--data_path', type=str, required=True, help='Path to the CSV file containing the data.')
+    parser.add_argument('--suffix', type=str, default='', help='Optional suffix for the output heatmap filenames.')
+    parser.add_argument('--save_dir', type=str, default='/home/kotikos/Education/UoG/Earth Science Master/Thesis/results/heatmaps', help='Directory where the heatmaps will be saved.')
+
+    args = parser.parse_args()
+
+    print(f"Running the heatmap generation script with the following options:\nData path: {args.data_path}\nSuffix: {args.suffix}\nSave directory: {args.save_dir}")
     
-    cor_path = 'data_for_correlation.csv'
-    heatmaps(cor_path)
+    heatmaps(data_file_path=args.data_path, name_suffix=args.suffix, save_dir=args.save_dir)
