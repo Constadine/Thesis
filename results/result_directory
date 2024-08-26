@@ -3,10 +3,19 @@
         kendall_correlation_heatmap.png
         pearson_correlation_heatmap.png
         spearman_correlation_heatmap.png
-            > No correlation
+            > No correlation ❌️
 
-    -- breeding period (april - june) means > heamaps/apr-jun      
+    -- breeding period (april - june) means > heatmaps/apr-jun      
         pearson_correlation_heatmap_apr_jun.png
         spearman_correlation_heatmap_apr_jun.png
         spearman_correlation_heatmap.png
-            > No correlation
+            > No correlation ❌️
+
+    -- breeding period + lag > heatmaps/apr-jun_lag
+
+        kendall_correlation_heatmap_apr_jun_lag.png
+        pearson_correlation_heatmap_apr_jun_lag.png
+        spearman_correlation_heatmap_apr_jun_lag.png
+            > No correlation ❌️
+
+
