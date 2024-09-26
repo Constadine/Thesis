@@ -1,4 +1,0 @@
-data_path: /path/to/data.csv
-population_path: /path/to/population.csv
-threshold: 0.95
-
