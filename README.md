@@ -19,11 +19,7 @@ This investigation encompasses an intricate examination of climatic variables in
   - [Usage](#usage)
   - [Output](#output)
   - [Logging](#logging)
-- [Correlational Analysis](#correlational-analysis)
-- [Workflow](#workflow)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+
 
 ## Data Sources:
 
