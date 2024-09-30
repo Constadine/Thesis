@@ -126,7 +126,7 @@ pip install -r requirements.txt
 ### Configuration
 The pipeline is configured using the config.yaml file located in the config/ directory. This file defines paths to data files, climate variables, and logging settings.
 
-Example config.yaml
+Example `config.yaml`:
 ```
 paths:
   raw_occurrence_file: 'data/bird_data/raw/occurrence.txt'
