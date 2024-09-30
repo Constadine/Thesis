@@ -9,3 +9,4 @@
 environment.yml
 *.csv#
 *.png
+*.log
