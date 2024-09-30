@@ -6,6 +6,12 @@ paths:
   aggregated_bird_data: 'data/bird_data/processed/aggregated_bird_data_sorted.csv'
   paired_bird_climate_data: 'data/combined_data/processed/paired_birds_all_climate_data.csv'
   climate_data_folder: 'data/climate_data/processed'
+  correlation_data_path: 'data/combined_data/processed/data_for_correlation.csv'
+
+output:
+  heatmaps: 'results/heatmaps'
+  logs: 'logs'
+  reports: 'results/reports'
 
 climate_variables:
   - air_pressure
@@ -130,4 +136,4 @@ climate_configs:
         monthly_metric_name: 'Monthly Std Dev Wind Speed'
         yearly_metric_name: 'Yearly Std Dev Wind Speed'
 
-log_file: 'logs/pipeline.log'
+save_images_default: false  # Default setting for saving images unless overridden

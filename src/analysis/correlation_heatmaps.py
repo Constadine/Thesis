@@ -1,72 +1,93 @@
+# src/analysis/correlation_heatmaps.py
+
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import numpy as np
 import os
-import argparse
+from typing import List
+from src.configurations.config import CorrelationConfig
+import logging
 
-def heatmaps(data_file_path, name_suffix='', save_dir='/home/kotikos/Education/UoG/Earth Science Master/Thesis/results/heatmaps', save_images=False):
-    print(f"Reading data from {data_file_path}...")
-    cor_data = pd.read_csv(data_file_path)
-    
-    # Replace -1 with NaN
-    filtered_data = cor_data.replace(-1, np.nan)
-    
-    # Select only the relevant columns for correlation
-    correlation_data = filtered_data[['total_population', 'air_pressure_values', 'air_temperature_values', 
-                                      'wind_values', 'sea_temp_values', 'seawater_level_values', 
-                                      'wave_height_values']]
-    
-    print("Calculating correlation matrices...")
-    # Calculate the correlation matrices
-    pearsons_corr = correlation_data.corr()
-    spearman_corr = correlation_data.corr(method='spearman')
-    kendall_corr = correlation_data.corr(method='kendall')
 
-    # Plot and optionally save Pearson correlation heatmap
-    print("Generating Pearson correlation heatmap...")
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(pearsons_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
-    plt.title('Pearson Correlation Heatmap')
-    if save_images:
-        plt.savefig(os.path.join(save_dir, f'pearson_correlation_heatmap{f"_{name_suffix}"}.png'), dpi=300, bbox_inches='tight')
-    plt.show()
+class CorrelationHeatmapGenerator:
+    """
+    Generates and saves correlation heatmaps based on the provided configuration.
+    """
 
-    # Plot and optionally save Spearman correlation heatmap
-    print("Generating Spearman correlation heatmap...")
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(spearman_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
-    plt.title('Spearman Correlation Heatmap')
-    if save_images:
-        plt.savefig(os.path.join(save_dir, f'spearman_correlation_heatmap{f"_{name_suffix}"}.png'), dpi=300, bbox_inches='tight')
-    plt.show()
-    
-    # Plot and optionally save Kendall Tau correlation heatmap
-    print("Generating Kendall Tau correlation heatmap...")
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(kendall_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
-    plt.title('Kendall Tau Correlation Heatmap')
-    if save_images:
-        plt.savefig(os.path.join(save_dir, f'kendall_correlation_heatmap{f"_{name_suffix}"}.png'), dpi=300, bbox_inches='tight')
-    plt.show()
-    
-    if save_images:
-        print(f'Heatmaps were saved and moved to {save_dir}')
-    else:
-        print('Heatmaps were displayed but not saved.')
+    def __init__(self, config: CorrelationConfig):
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+        self.setup_logging()
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Generate and save heatmaps for Pearson, Spearman, and Kendall Tau correlations.',
-        epilog='Example usage: python heatmap_script.py --data_path data/final_datasets/data_for_correlation_apr_jun.csv --suffix apr_jun'
-    )
-    parser.add_argument('--data_path', type=str, required=True, help='Path to the CSV file containing the data.')
-    parser.add_argument('--suffix', type=str, default='', help='Optional suffix for the output heatmap filenames.')
-    parser.add_argument('--save_dir', type=str, default='/home/kotikos/Education/UoG/Earth Science Master/Thesis/results/heatmaps', help='Directory where the heatmaps will be saved.')
-    parser.add_argument('--save_images', action='store_true', help='Include this flag to save the heatmaps. By default, the images will not be saved.')
+    def setup_logging(self):
+        """Sets up logging configuration."""
+        if not self.logger.hasHandlers():
+            self.logger.setLevel(logging.INFO)
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
 
-    args = parser.parse_args()
+    def run(self):
+        """Executes the heatmap generation process."""
+        self.logger.info("Starting correlation heatmap generation.")
+        self.generate_heatmaps()
+        self.logger.info("Correlation heatmap generation completed.")
 
-    print(f"Running the heatmap generation script with the following options:\nData path: {args.data_path}\nSuffix: {args.suffix}\nSave directory: {args.save_dir}\nSave images: {args.save_images}")
-    
-    heatmaps(data_file_path=args.data_path, name_suffix=args.suffix, save_dir=args.save_dir, save_images=args.save_images)
+    def generate_heatmaps(self):
+        """Generates correlation heatmaps for the specified columns."""
+        # Load data
+        try:
+            self.logger.info(f"Loading data from {self.config.data_file_path}")
+            df = pd.read_csv(self.config.data_file_path)
+            self.validate_columns(df)
+            self.logger.info("Data loaded successfully.")
+        except Exception as e:
+            self.logger.error(f"Failed to load data: {e}")
+            raise ValueError(f"Failed to load data from {self.config.data_file_path}: {e}")
+
+        # Compute correlation matrix
+        try:
+            self.logger.info("Computing correlation matrix.")
+            corr_matrix = df[self.config.columns].corr()
+            self.logger.info("Correlation matrix computed successfully.")
+        except KeyError as e:
+            self.logger.error(f"One or more specified columns do not exist: {e}")
+            raise ValueError(f"One or more specified columns do not exist in the dataset: {e}")
+
+        # Create heatmap
+        self.logger.info("Generating heatmap.")
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+        plt.title('Correlation Heatmap')
+
+        # Prepare save directory
+        save_dir = self.config.save_dir
+        os.makedirs(save_dir, exist_ok=True)
+        self.logger.info(f"Heatmaps will be saved to {save_dir}")
+
+        # Prepare filename
+        suffix = self.config.name_suffix
+        filename = f"correlation_heatmap{suffix}.png" if self.config.save_images else "correlation_heatmap.png"
+        save_path = os.path.join(save_dir, filename)
+
+        # Save the heatmap
+        if self.config.save_images:
+            self.logger.info(f"Saving heatmap to {save_path}")
+            plt.savefig(save_path)
+            self.logger.info(f"Heatmap saved to {save_path}")
+
+        # Show plot
+        if self.config.show_plots:
+            self.logger.info("Displaying heatmap plot.")
+            plt.show()
+        else:
+            self.logger.info("Displaying heatmap plot is suppressed.")
+            plt.close()
+
+    def validate_columns(self, df: pd.DataFrame):
+        """Validates that all specified columns exist in the DataFrame."""
+        missing_columns = [col for col in self.config.columns if col not in df.columns]
+        if missing_columns:
+            self.logger.error(f"The following columns are missing in the dataset: {missing_columns}")
+            raise ValueError(f"The following columns are missing in the dataset: {missing_columns}")

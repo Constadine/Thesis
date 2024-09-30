@@ -218,6 +218,8 @@ Comprehensive logging is implemented to track the pipeline's execution and aid i
     - Errors encountered during execution.
 
 
+# TO FIX
+
 #### Viewing Logs
 You can view the log file using standard command-line tools or any text editor.
 
@@ -230,5 +232,166 @@ Or, for real-time monitoring:
 tail -f logs/pipeline.log
 ```
 
+Correlational Analysis
+Purpose
+The Correlational Analysis aims to identify and quantify the relationships between coastal bird populations and various climatic variables. By generating correlation heatmaps, we can visually assess the strength and direction of these relationships, which is crucial for understanding the impact of climatic factors on the viability of coastal bird breeding.
+
+Analysis Pipeline
+The analysis involves the following steps:
+
+Data Preparation: Utilize the processed data from the data processing pipeline.
+Configuration: Set up analysis parameters in the configuration file.
+Running the Analysis Script: Execute the script to generate correlation heatmaps.
+Interpreting Results: Analyze the generated heatmaps to draw meaningful conclusions.
+Configuration
+The analysis parameters are set in the same config.yaml file under the output section and other relevant sections. Ensure your config.yaml includes the necessary configurations for the analysis.
+
+Example config.yaml (additional relevant sections):
+
+yaml
+Copy code
+paths:
+  raw_occurrence_file: 'data/bird_data/raw/occurrence.txt'
+  cleaned_bird_data: 'data/bird_data/processed/all_nestlings_cleaned.csv'
+  aggregated_bird_data: 'data/bird_data/processed/aggregated_bird_data_sorted.csv'
+  paired_bird_climate_data: 'data/bird_data/processed/paired_birds_all_climate_data.csv'
+  climate_data_folder: 'data/climate_data/processed'
+  correlation_data_path: 'data/final_datasets/data_for_correlation.csv'
+
+output:
+  heatmaps: 'results/heatmaps'
+  logs: 'logs'
+  reports: 'results/reports'
+
+save_images_default: false  # Default setting for saving images unless overridden
+Key Configuration Sections for Analysis
+paths.correlation_data_path: Specifies the path to the data file used for correlation analysis.
+output.heatmaps: Directory where the generated heatmaps will be saved.
+save_images_default: Default behavior for saving images when running analysis scripts.
+Usage
+Running the Correlation Heatmap Script
+The correlation heatmaps can be generated using the run_correlation_heatmaps.py script located in the scripts/ directory.
+
+Basic Command
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --columns total_population sea_temp_values
+Command-Line Arguments
+--config: Path to the configuration YAML file. Defaults to config/config.yaml if not specified.
+--columns: List of columns to include in the correlation analysis.
+--save_images: Include this flag to save the heatmaps as PNG files.
+--no_show: Include this flag to suppress displaying the plots interactively.
+--save_dir: (Optional) Specify a different directory to save the heatmaps. Overrides the output.heatmaps setting in the configuration.
+--list_columns: Include this flag to list all available columns in the dataset and exit.
+Examples
+List Available Columns
+
+To display all the columns available for analysis:
+
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --list_columns
+Expected Output:
+
+markdown
+Copy code
+Available columns in the dataset:
+ - Year
+ - lat
+ - lon
+ - total_population
+ - air_pressure_values
+ - air_temperature_values
+ - wind_values
+ - sea_temp_values
+ - seawater_level_values
+ - wave_height_values
+ ...
+Generate Heatmap with Specified Columns
+
+To generate a correlation heatmap for specific columns and save the image:
+
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --columns total_population sea_temp_values --save_images
+Suppress Plot Display
+
+If you want to run the script without displaying the plots interactively:
+
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --columns total_population sea_temp_values --save_images --no_show
+Specify a Custom Save Directory
+
+To save the heatmaps to a different directory:
+
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --columns total_population sea_temp_values --save_images --save_dir 'custom/heatmaps'
+Output
+The generated heatmaps will be saved in the directory specified by output.heatmaps in the configuration file, unless overridden by the --save_dir argument.
+
+Default Save Directory: results/heatmaps/
+File Naming Convention: Heatmaps are saved with the filename correlation_heatmap.png or with an optional suffix if provided using --name_suffix.
+Interpreting the Heatmaps
+The correlation heatmaps display the correlation coefficients between the selected variables:
+
+Correlation Coefficients:
++1.0: Perfect positive correlation.
+0.0: No correlation.
+-1.0: Perfect negative correlation.
+By examining the heatmap, you can identify which climate variables have significant correlations with bird populations, aiding in understanding the climatic influences on coastal bird breeding.
+
+Dependencies
+Ensure the following Python packages are installed (already included in requirements.txt):
+
+pandas
+numpy
+seaborn
+matplotlib
+pydantic
+pyyaml
+Example Workflow
+Prepare the Data:
+
+Run the data processing pipeline to generate the data_for_correlation.csv file:
+
+bash
+Copy code
+python scripts/run_bird_climate_pipeline.py --config config/config.yaml
+List Available Columns:
+
+Check which columns are available for correlation analysis:
+
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --list_columns
+Generate Heatmap:
+
+Create a correlation heatmap using selected variables:
+
+bash
+Copy code
+python scripts/run_correlation_heatmaps.py --config config/config.yaml --columns total_population wind_values sea_temp_values --save_images
+Review Output:
+
+Heatmaps are saved in results/heatmaps/.
+Review the heatmap to interpret the correlations.
+Visualization
+Purpose
+Visual representations, such as heatmaps, are crucial for interpreting complex data relationships. They provide intuitive insights into how different variables interact with each other.
+
+Customization
+You can customize the visualizations by:
+
+Selecting Different Variables: Use the --columns argument.
+Adjusting Aesthetics: Modify the script to change color schemes or annotations.
+Adding Name Suffixes: Use the --name_suffix argument to differentiate between multiple heatmaps.
+Additional Visualizations
+Beyond heatmaps, consider creating:
+
+Scatter Plots: To visualize relationships between two variables.
+Time Series Plots: To observe trends over time.
+Box Plots: To analyze the distribution of a variable.
 
 
