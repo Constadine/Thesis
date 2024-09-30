@@ -1,0 +1,133 @@
+# config/config.yaml
+
+paths:
+  raw_occurrence_file: 'data/bird_data/raw/occurrence.txt'
+  cleaned_bird_data: 'data/bird_data/processed/all_nestlings_cleaned.csv'
+  aggregated_bird_data: 'data/bird_data/processed/aggregated_bird_data_sorted.csv'
+  paired_bird_climate_data: 'data/combined_data/processed/paired_birds_all_climate_data.csv'
+  climate_data_folder: 'data/climate_data/processed'
+
+climate_variables:
+  - air_pressure
+  - air_temperature
+  - seawater_level
+  - sea_temp
+  - wave_height
+  - wind
+
+climate_configs:
+  air_pressure:
+    file_path_pattern: 'data/climate_data/raw/air_pressure/*.csv'
+    skiprows: 10
+    usecols: [0, 2]
+    delimiter: ';'
+    column_names: ['Date', 'Air Pressure']
+    date_column: 'Date'
+    value_column: 'Air Pressure'
+    distance_limit: 20
+    n_hours_for_mean_conc_diff: 12
+    value_threshold_for_conc_diff: 40
+    metrics:
+      mean:
+        monthly_metric_name: 'Monthly Mean Air Pressure'
+        yearly_metric_name: 'Yearly Mean Air Pressure'
+      std:
+        monthly_metric_name: 'Monthly Std Dev Air Pressure'
+        yearly_metric_name: 'Yearly Std Dev Air Pressure'
+
+  air_temperature:
+    file_path_pattern: 'data/climate_data/raw/air_temperature/*.csv'
+    skiprows: 10
+    usecols: [0, 2]
+    delimiter: ';'
+    column_names: ['Date', 'Temperature']
+    date_column: 'Date'
+    value_column: 'Temperature'
+    distance_limit: 20
+    n_hours_for_mean_conc_diff: 3
+    value_threshold_for_conc_diff: 5
+    metrics:
+      mean:
+        monthly_metric_name: 'Monthly Mean Air Temperature'
+        yearly_metric_name: 'Yearly Mean Air Temperature'
+      std:
+        monthly_metric_name: 'Monthly Std Dev Air Temperature'
+        yearly_metric_name: 'Yearly Std Dev Air Temperature'
+
+  seawater_level:
+    file_path_pattern: 'data/climate_data/raw/seawater_level/*.csv'
+    skiprows: 10
+    usecols: [0, 2]
+    delimiter: ';'
+    column_names: ['Date', 'Seawater Level']
+    date_column: 'Date'
+    value_column: 'Seawater Level'
+    distance_limit: 20
+    n_hours_for_mean_conc_diff: 6
+    value_threshold_for_conc_diff: 10
+    metrics:
+      mean:
+        monthly_metric_name: 'Monthly Mean Seawater Level'
+        yearly_metric_name: 'Yearly Mean Seawater Level'
+      std:
+        monthly_metric_name: 'Monthly Std Dev Seawater Level'
+        yearly_metric_name: 'Yearly Std Dev Seawater Level'
+
+  sea_temp:
+    file_path_pattern: 'data/climate_data/raw/sea_temp/*.csv'
+    skiprows: 10
+    usecols: [0, 2]
+    delimiter: ';'
+    column_names: ['Date', 'Sea Temperature']
+    date_column: 'Date'
+    value_column: 'Sea Temperature'
+    distance_limit: 20
+    n_hours_for_mean_conc_diff: 4
+    value_threshold_for_conc_diff: 8
+    metrics:
+      mean:
+        monthly_metric_name: 'Monthly Mean Sea Temperature'
+        yearly_metric_name: 'Yearly Mean Sea Temperature'
+      std:
+        monthly_metric_name: 'Monthly Std Dev Sea Temperature'
+        yearly_metric_name: 'Yearly Std Dev Sea Temperature'
+
+  wave_height:
+    file_path_pattern: 'data/climate_data/raw/wave_height/*.csv'
+    skiprows: 10
+    usecols: [0, 2]
+    delimiter: ';'
+    column_names: ['Date', 'Wave Height']
+    date_column: 'Date'
+    value_column: 'Wave Height'
+    distance_limit: 20
+    n_hours_for_mean_conc_diff: 5
+    value_threshold_for_conc_diff: 15
+    metrics:
+      mean:
+        monthly_metric_name: 'Monthly Mean Wave Height'
+        yearly_metric_name: 'Yearly Mean Wave Height'
+      std:
+        monthly_metric_name: 'Monthly Std Dev Wave Height'
+        yearly_metric_name: 'Yearly Std Dev Wave Height'
+
+  wind:
+    file_path_pattern: 'data/climate_data/raw/wind/*.csv'
+    skiprows: 10
+    usecols: [0, 2]
+    delimiter: ';'
+    column_names: ['Date', 'Wind Speed']
+    date_column: 'Date'
+    value_column: 'Wind Speed'
+    distance_limit: 20
+    n_hours_for_mean_conc_diff: 2
+    value_threshold_for_conc_diff: 20
+    metrics:
+      mean:
+        monthly_metric_name: 'Monthly Mean Wind Speed'
+        yearly_metric_name: 'Yearly Mean Wind Speed'
+      std:
+        monthly_metric_name: 'Monthly Std Dev Wind Speed'
+        yearly_metric_name: 'Yearly Std Dev Wind Speed'
+
+log_file: 'logs/pipeline.log'

@@ -57,7 +57,7 @@ configs = {
         'column_names': ['Date', 'Sea Temperature'],
         'date_column': 'Date',
         'value_column': 'Sea Temperature',
-        'distance_limit': 10,
+        'distance_limit': 20,
         'n_hours_for_mean_conc_diff': 12,
         'value_threshold_for_conc_diff': 5,
         'metrics': {
@@ -103,7 +103,7 @@ configs = {
         'column_names': ['Date', 'Wave Height'],
         'date_column': 'Date',
         'value_column': 'Wave Height',
-        'distance_limit': 10,
+        'distance_limit': 30,
         'n_hours_for_mean_conc_diff': 2,
         'value_threshold_for_conc_diff': 1,
         'metrics': {
@@ -126,7 +126,7 @@ configs = {
         'column_names': ['Date', 'Wind Speed'],
         'date_column': 'Date',
         'value_column': 'Wind Speed',
-        'distance_limit': 10,
+        'distance_limit': 30,
         'n_hours_for_mean_conc_diff': 2,
         'value_threshold_for_conc_diff': 300,
         'metrics': {

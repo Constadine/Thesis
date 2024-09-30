@@ -6,3 +6,7 @@
 *.pyc
 *.atom
 *.html
+environment.yml
+*.csv#
+*.png
+*.log

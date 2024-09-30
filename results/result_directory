@@ -1,0 +1,21 @@
+- Correlation analyses (heatmaps with kendall, pearson, spearman): 
+    -- full yearly means > heatmaps/yearly
+        kendall_correlation_heatmap.png
+        pearson_correlation_heatmap.png
+        spearman_correlation_heatmap.png
+            > No correlation ❌️
+
+    -- breeding period (april - june) means > heatmaps/apr-jun      
+        pearson_correlation_heatmap_apr_jun.png
+        spearman_correlation_heatmap_apr_jun.png
+        spearman_correlation_heatmap.png
+            > No correlation ❌️
+
+    -- breeding period + lag > heatmaps/apr-jun_lag
+
+        kendall_correlation_heatmap_apr_jun_lag.png
+        pearson_correlation_heatmap_apr_jun_lag.png
+        spearman_correlation_heatmap_apr_jun_lag.png
+            > No correlation ❌️
+
+
